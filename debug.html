@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geopolítica Estratégica</title>
+  <!-- Basic reset and imports -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Primary header: logo, status/date and login -->
+  <header class="header">
+    <div class="container header-inner">
+      <!-- Wrap the entire logo area in a link so clicking it returns to the homepage -->
+      <a href="#" class="logo-link">
+        <div class="logo-block">
+          <!-- Use the supplied logo instead of the yellow circle -->
+          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
+          <div class="logo-text-block">
+            <h1>GEOPOLÍTICA</h1>
+            <h2>ESTRATÉGICA</h2>
+          </div>
+        </div>
+      </a>
+      <div class="header-right">
+        <!-- Display only the date; Terminal Status was removed -->
+        <span class="date-text">domingo, 04 de janeiro de 2026</span>
+        <!-- Login button opens the authentication modal -->
+        <button class="login-btn" id="openLogin">ENTRAR</button>
+        <!-- Placeholder for showing logged in user info; filled via JS -->
+        <div class="user-info hidden" id="userInfo">
+          <span class="user-email"></span>
+          <button class="logout-btn" id="logoutBtn">Sair</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Authentication modal (hidden by default) -->
+  <div id="authModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="modal-close" id="closeModal" aria-label="Fechar">×</button>
+      <div class="auth-tabs">
+        <button id="loginTab" class="tab active">Login</button>
+        <button id="registerTab" class="tab">Cadastro</button>
+      </div>
+      <div class="auth-forms">
+        <!-- Login form -->
+        <form id="loginForm" class="auth-form">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" required placeholder="Seu email">
+          <label for="loginPassword">Senha</label>
+          <input type="password" id="loginPassword" required placeholder="Sua senha">
+          <button type="submit" class="auth-submit">Entrar</button>
+        </form>
+        <!-- Registration form -->
+        <form id="registerForm" class="auth-form hidden">
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" required placeholder="Seu email">
+          <label for="registerPassword">Senha</label>
+          <input type="password" id="registerPassword" required placeholder="Crie uma senha">
+          <label for="registerConfirm">Confirmar senha</label>
+          <input type="password" id="registerConfirm" required placeholder="Repita a senha">
+          <div class="subscribe-row">
+            <input type="checkbox" id="subscribeNews" />
+            <label for="subscribeNews">Quero receber notícias por email</label>
+          </div>
+          <button type="submit" class="auth-submit">Cadastrar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Site content wrapper: hidden until login -->
+  <div id="siteContent">
+  <!-- Main navigation with categories, submenus and search -->
+  <nav class="main-nav">
+    <div class="container nav-inner">
+      <!-- Wrap categories list in its own container to center it horizontally -->
+      <div class="categories-container">
+      <ul class="categories">
+        <li class="category" data-category="INICIO">Início</li>
+        <li class="category has-submenu" data-category="CONFLITOS">Conflitos
+          <ul class="submenu">
+            <li data-sub="ucrania-russia">Ucrânia x Rússia</li>
+            <li data-sub="israel-ira">Israel x Irã / Oriente Médio</li>
+            <li data-sub="china-taiwan">China x Taiwan</li>
+            <li data-sub="venezuela-eua">Venezuela x EUA</li>
+            <li data-sub="coreia-norte">Coreia do Norte</li>
+            <li data-sub="mar-sul-china">Mar do Sul da China</li>
+            <li data-sub="europa-oriental">Europa Oriental</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="GEO">Geopolítica Global
+          <ul class="submenu">
+            <li data-sub="relacoes-internacionais">Relações internacionais</li>
+            <li data-sub="blocos-poder">Blocos de poder (OTAN, BRICS, G7)</li>
+            <li data-sub="diplomacia">Diplomacia</li>
+            <li data-sub="sancoes-economicas">Sanções econômicas</li>
+            <li data-sub="guerras-hibridas">Guerras híbridas e guerra informacional</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="DEFESA">Defesa &amp; Militar
+          <ul class="submenu">
+            <li data-sub="movimentacoes-militares">Movimentações militares</li>
+            <li data-sub="tecnologias-defesa">Tecnologias de defesa</li>
+            <li data-sub="armas-sistemas">Armas e sistemas</li>
+            <li data-sub="exercitos-mundo">Exércitos do mundo</li>
+            <li data-sub="operacoes-exercicios">Operações e exercícios militares</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="CIBER">Inteligência &amp; Cibersegurança
+          <ul class="submenu">
+            <li data-sub="ciberataques">Ciberataques</li>
+            <li data-sub="espionagem">Espionagem</li>
+            <li data-sub="guerra-cibernetica">Guerra cibernética</li>
+            <li data-sub="operacoes-psicologicas">Operações psicológicas</li>
+            <li data-sub="desinformacao">Desinformação e guerra cognitiva</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="ECON">Economia &amp; Sanções
+          <ul class="submenu">
+            <li data-sub="sancoes-internacionais">Sanções internacionais</li>
+            <li data-sub="energia-petroleo">Energia e petróleo</li>
+            <li data-sub="comercio-global">Comércio global</li>
+            <li data-sub="impactos-guerra">Impactos econômicos das guerras</li>
+            <li data-sub="crises-financeiras">Crises financeiras</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="BRASIL">🇧🇷 Brasil no Mundo
+          <ul class="submenu">
+            <li data-sub="posicao-brasil">Posição do Brasil</li>
+            <li data-sub="diplomacia-brasileira">Diplomacia brasileira</li>
+            <li data-sub="liderancas">Lula, Itamaraty, Forças Armadas</li>
+            <li data-sub="impactos-brasil">Impactos globais para o Brasil</li>
+          </ul>
+        </li>
+        <li class="category has-submenu" data-category="REGIOES">Macro-regiões
+          <ul class="submenu">
+            <li data-sub="americas">Américas</li>
+            <li data-sub="europa">Europa</li>
+            <li data-sub="asia">Ásia</li>
+            <li data-sub="africa">África</li>
+            <li data-sub="oceania">Oceania</li>
+            <li data-sub="antartida">Antártida</li>
+            <li data-sub="norte-sul">Norte Global vs. Sul Global</li>
+            <li data-sub="ocidental-oriental">Mundo Ocidental vs. Mundo Oriental</li>
+          </ul>
+        </li>
+      </ul>
+      </div>
+      <!-- Search bar within the navigation -->
+      <div class="nav-search">
+        <input type="text" id="navSearchInput" placeholder="Buscar..." aria-label="Pesquisar">
+        <!-- Use an inline SVG for a more modern magnifying glass icon -->
+        <button id="navSearchBtn" class="nav-search-btn" aria-label="Buscar">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breaking news ticker -->
+  <div class="breaking">
+    <div class="container breaking-inner">
+      <div class="breaking-tag">
+        <span class="lightning">⚡</span>
+        <span class="breaking-label">BREAKING NEWS</span>
+      </div>
+      <!-- The ticker contains only the headline, which is clickable -->
+      <div class="breaking-ticker">
+        <span class="breaking-title">Tensão no Estreito de Ormuz: Irã anuncia novos exercícios navais</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Removed the filters bar to simplify the UI; filtering is now handled by categories and search -->
+
+  <!-- Main content area with feed and sidebar -->
+  <main class="main-content">
+    <div class="container feed-layout">
+      <div class="feed-column">
+        <h1 class="feed-title">Feed de Inteligência Global</h1>
+        <div class="feed-update">ATUALIZAÇÃO EM TEMPO REAL</div>
+        <!-- Feed items will be dynamically rendered here by script.js -->
+        <div id="feedList" class="feed-list"></div>
+      </div>
+      <aside class="sidebar-column">
+        <div class="markets-widget">
+          <div class="markets-header">MERCADOS ESTRATÉGICOS</div>
+          <ul class="markets-list">
+            <li><span class="market-label">BRENT CRUDE</span><span class="market-value up">▲ $95.42</span></li>
+            <li><span class="market-label">GOLD SPOT</span><span class="market-value up">▲ $2,140</span></li>
+            <li><span class="market-label">USD/BRL</span><span class="market-value down">▼ 4.95</span></li>
+            <li><span class="market-label">EUR/USD</span><span class="market-value flat">• 1.08</span></li>
+          </ul>
+        </div>
+        <div class="trending-widget">
+          <div class="trending-header">EM ALTA</div>
+          <ul class="trending-list">
+            <li># Crise no Mar Vermelho</li>
+            <li># Disputa no Indo-Pacífico</li>
+            <li># Risco em energia e rotas</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+  </div> <!-- end of siteContent wrapper -->
+
+  <!-- Optional JavaScript for interactive features -->
+  <script src="script.js"></script>
+</body>
+</html>

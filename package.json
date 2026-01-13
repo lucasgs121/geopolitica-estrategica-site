@@ -1,0 +1,28 @@
+{
+  "name": "teste",
+  "version": "1.0.0",
+  "description": "Portal de notícias e análises geopolíticas - Geopolítica Estratégica",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucasgs121/geopolitica-estrategica-site.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lucasgs121/geopolitica-estrategica-site/issues"
+  },
+  "homepage": "https://github.com/lucasgs121/geopolitica-estrategica-site#readme",
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^2.6.12",
+    "nodemailer": "^6.9.14",
+    "dotenv": "^16.4.5"
+  }
+}

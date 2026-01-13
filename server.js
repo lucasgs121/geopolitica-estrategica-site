@@ -1,0 +1,274 @@
+const express = require('express');
+const path = require('path');
+
+// Compat: garante fetch mesmo em Node < 18
+const fetch = globalThis.fetch || require('node-fetch');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+const app = express();
+
+app.use(express.json({ limit: '50kb' }));
+const PORT = process.env.PORT || 3000;
+
+// === Helpers ===
+function safeNumber(v) {
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function withTimeout(promise, timeoutMs = 9000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs))
+  ]);
+}
+
+async function fetchText(url, timeoutMs = 9000) {
+  const res = await withTimeout(fetch(url, {
+    cache: 'no-store',
+    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
+  }), timeoutMs);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
+async function fetchJson(url, timeoutMs = 9000) {
+  const res = await withTimeout(fetch(url, {
+    cache: 'no-store',
+    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
+  }), timeoutMs);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+// === Parceria (envio de e-mail) ===
+app.post('/api/partnership-send', async (req, res) => {
+  res.set('Cache-Control', 'no-store, max-age=0');
+
+  try {
+    const { nome, sobrenome, email, mensagem } = req.body || {};
+
+    const cleanNome = String(nome || '').trim();
+    const cleanSobrenome = String(sobrenome || '').trim();
+    const cleanEmail = String(email || '').trim();
+    const cleanMensagem = String(mensagem || '').trim();
+
+    if (!cleanNome || !cleanSobrenome || !cleanEmail || !cleanMensagem) {
+      return res.status(400).json({ ok: false, error: 'MISSING_FIELDS' });
+    }
+
+    // validação simples de e-mail (mantém o browser como primeira linha de validação)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      return res.status(400).json({ ok: false, error: 'INVALID_EMAIL' });
+    }
+
+    // Config SMTP via variáveis de ambiente (não expõe credenciais no frontend)
+    const SMTP_HOST = process.env.SMTP_HOST;
+    const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
+    const SMTP_USER = process.env.SMTP_USER;
+    const SMTP_PASS = process.env.SMTP_PASS;
+    const SMTP_FROM = process.env.SMTP_FROM || SMTP_USER;
+
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      return res.status(500).json({ ok: false, error: 'SMTP_NOT_CONFIGURED' });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: { user: SMTP_USER, pass: SMTP_PASS }
+    });
+
+    const to = process.env.MAIL_TO || process.env.SMTP_USER || 'geopoliticaestrategica@geopoliticaestrategica.com';
+    const subject = 'Novo contato de parceria';
+
+    const textBody =
+`Nome: ${cleanNome}
+Sobrenome: ${cleanSobrenome}
+E-mail: ${cleanEmail}
+Mensagem:
+${cleanMensagem}
+`;
+
+    await transporter.sendMail({
+      from: SMTP_FROM,
+      to,
+      subject,
+      text: textBody,
+      replyTo: cleanEmail
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: 'SEND_ERROR' });
+  }
+});
+
+// === Sources ===
+
+// USD/BRL (BCB PTAX - venda). Tenta hoje; se não houver (fim de semana/feriado), tenta dias anteriores.
+function fmtBCBDate(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  // Olinda costuma aceitar MM-DD-YYYY
+  return `${mm}-${dd}-${yyyy}`;
+}
+
+async function fetchUSDBRL_BCB_PTAX() {
+  for (let back = 0; back <= 10; back++) {
+    const d = new Date();
+    d.setDate(d.getDate() - back);
+    const dateStr = fmtBCBDate(d);
+    const url = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='${dateStr}'&$top=1&$orderby=dataHoraCotacao%20desc&$format=json`;
+    try {
+      const data = await fetchJson(url);
+      const row = data?.value?.[0];
+      const v = safeNumber(row?.cotacaoVenda);
+      if (v != null) return v;
+    } catch (_) {
+      // continue
+    }
+  }
+  return null;
+}
+
+// EUR/USD (ECB eurofxref-daily.xml). ECB fornece USD por 1 EUR -> isso é EUR/USD.
+async function fetchEURUSD_ECB() {
+  try {
+    const xml = await fetchText('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
+    const m = xml.match(/currency=['"]USD['"]\s+rate=['"]([0-9.]+)['"]/);
+    const v = m ? safeNumber(m[1]) : null;
+    return v;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Stooq close price (CSV)
+async function fetchStooqClose(symbol) {
+  const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`;
+  try {
+    const csv = await fetchText(url);
+    if (csv.toLowerCase().includes('no data')) return null;
+    const lines = csv.trim().split(/\r?\n/);
+    if (lines.length < 2) return null;
+    const cols = lines[1].split(',');
+    // Symbol,Date,Time,Open,High,Low,Close,Volume
+    const close = safeNumber(cols[6]);
+    return close;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Bitcoin (CoinGecko)
+async function fetchBTCUSD_CoinGecko() {
+  try {
+    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
+    const data = await fetchJson(url);
+    return safeNumber(data?.bitcoin?.usd);
+  } catch (_) {
+    return null;
+  }
+}
+
+// FRED (St. Louis Fed) CSV: pega o último valor numérico disponível de uma série
+async function fetchFREDLatest(seriesId) {
+  try {
+    const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(seriesId)}`;
+    const csv = await fetchText(url);
+    const lines = csv.trim().split(/\r?\n/);
+    // formato: DATE,VALUE
+    for (let i = lines.length - 1; i >= 1; i--) {
+      const parts = lines[i].split(',');
+      const v = parts?.[1];
+      const n = safeNumber(v);
+      if (n != null) return n;
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// CBOE VIX history CSV: usa o último Close disponível
+async function fetchVIX_CBOE() {
+  try {
+    const url = 'https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv';
+    const csv = await fetchText(url);
+    const lines = csv.trim().split(/\r?\n/);
+    // Header: DATE, OPEN, HIGH, LOW, CLOSE
+    for (let i = lines.length - 1; i >= 1; i--) {
+      const cols = lines[i].split(',');
+      const close = safeNumber(cols?.[4]);
+      if (close != null) return close;
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// === API endpoint ===
+app.get('/api/markets', async (req, res) => {
+  // Cache control: evitar servir dados antigos
+  res.set('Cache-Control', 'no-store, max-age=0');
+
+  // Observação: onde houver fonte oficial melhor, priorizamos.
+  const tasks = {
+    // Brent: FRED DCOILBRENTEU (US$/barrel) - fonte estável e sem chave
+    brent: async () => (await fetchFREDLatest('DCOILBRENTEU')) ?? null,
+
+    // Gold: Stooq (spot/futuros). Mantém fallback.
+    gold: async () => (await fetchStooqClose('xauusd')) ?? (await fetchStooqClose('gc.f')) ?? null,
+
+    usdbrl: fetchUSDBRL_BCB_PTAX,
+    eurusd: fetchEURUSD_ECB,
+
+    // Natural Gas: futuros (Stooq)
+    natgas: async () => (await fetchStooqClose('ng.f')) ?? null,
+
+    // Índices (Stooq)
+    sp500: async () => (await fetchStooqClose('^spx')) ?? (await fetchStooqClose('spx')) ?? null,
+    nasdaq: async () => (await fetchStooqClose('^ndx')) ?? (await fetchStooqClose('ndx')) ?? null,
+
+    bitcoin: fetchBTCUSD_CoinGecko,
+
+    // Baltic Dry Index: tenta FRED (BDIY). Se a série não existir ou falhar, fica indisponível.
+    bdi: async () => (await fetchFREDLatest('BDIY')) ?? null,
+
+    // VIX: fonte direta CBOE (histórico diário)
+    vix: fetchVIX_CBOE
+  };
+
+  const entries = await Promise.all(
+    Object.entries(tasks).map(async ([k, fn]) => {
+      try {
+        const v = await fn();
+        return [k, v];
+      } catch (_) {
+        return [k, null];
+      }
+    })
+  );
+
+  const out = {};
+  for (const [k, v] of entries) out[k] = v;
+
+  res.json(out);
+});
+
+// Serve arquivos estáticos
+app.use(express.static(path.join(__dirname)));
+
+// Fallback para a home
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Geopolítica Estratégica rodando em http://localhost:${PORT}`);
+});
