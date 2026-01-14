@@ -9,18 +9,7 @@
   <!-- Bump the version query whenever CSS/JS changes to force the browser to reload the latest file -->
   <!-- Update version to force cache refresh -->
   <link rel="stylesheet" href="style.css?v=26">
-
-<script>
-  window.GE_ANALYTICS_MEASUREMENT_ID = "G-GNR7MSEZVJ";
-</script>
-
-<script>
-  window.GE_ANALYTICS_MEASUREMENT_ID = "G-HTY1D12J3C";
-  window.GE_ADSENSE_CLIENT = "ca-pub-8051025492105010";
-</script>
-
 </head>
-
 <body>
   <!-- Primary header: logo, status/date and login -->
   <header class="header">
@@ -41,6 +30,9 @@
         <span class="date-text">domingo, 04 de janeiro de 2026</span>
         <!-- Login button opens the authentication modal -->
         <button class="login-btn" id="openLogin">ENTRAR</button>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">
+          <span class="mobile-menu-icon" aria-hidden="true">☰</span>
+        </button>
         <!-- Placeholder for showing logged in user info; filled via JS -->
         <div class="user-info hidden" id="userInfo">
           <span class="user-email"></span>
@@ -49,6 +41,32 @@
       </div>
     </div>
   </header>
+
+  <!-- Mobile-only header line 2: search + hamburger (does not affect desktop layout) -->
+  <div class="container mobile-header-row2 mobile-only">
+    <div class="nav-search mobile-search" role="search" aria-label="Buscar notícias">
+      <input type="text" id="mobileSearchInput" placeholder="Buscar..." aria-label="Buscar" />
+      <button id="mobileSearchBtn" aria-label="Pesquisar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <button class="mobile-menu-btn mobile-menu-btn-row2" id="mobileMenuBtnRow2" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">
+      <span class="mobile-menu-icon" aria-hidden="true">☰</span>
+    </button>
+  </div>
+
+  <!-- Mobile-only line 3: minimal ticker with the last 3 news titles -->
+  <div class="mobile-ticker mobile-only" aria-label="Breaking News">
+    <div class="container mobile-ticker-inner">
+      <span class="mobile-ticker-label"><span class="mobile-ticker-badge">⚡ BREAKING</span>:</span>
+      <div class="mobile-ticker-track" aria-hidden="true">
+        <div class="mobile-ticker-content" id="mobileTickerContent"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Authentication modal (hidden by default) -->
   <div id="authModal" class="modal hidden">
@@ -98,8 +116,9 @@
   <!-- Site content wrapper: hidden until login -->
   <div id="siteContent">
   <!-- Main navigation with categories, submenus and search -->
-  <nav class="main-nav">
+  <nav class="main-nav" id="mainNav">
     <div class="container nav-inner">
+      <button class="nav-close-btn" id="navCloseBtn" aria-label="Fechar menu">✕</button>
       <!-- Wrap categories list in its own container to center it horizontally -->
       <div class="categories-container">
       <ul class="categories">
@@ -184,6 +203,7 @@
       </div>
     </div>
   </nav>
+<div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
 
   <!-- Breaking news ticker -->
   <div class="breaking">
@@ -591,7 +611,7 @@
         <p>Os dados podem ser utilizados para responder contatos, melhorar o funcionamento do site, gerar estatísticas de audiência (Google Analytics) e, quando habilitado, personalizar e medir anúncios (Google AdSense e tecnologias semelhantes), sempre conforme a preferência de cookies escolhida pelo usuário.</p>
 
         <p><strong>Cookies e tecnologias similares</strong></p>
-        <p>Utilizamos cookies essenciais para funcionamento do site. Cookies de análise (Google Analytics) e de publicidade (Google AdSense) só devem ser ativados quando o usuário optar por aceitar cookies não essenciais. O usuário pode aceitar ou rejeitar cookies não essenciais por meio do aviso exibido ao acessar o site.</p>
+        <p>Utilizamos cookies essenciais para funcionamento do site. Cookies de análise (Google Analytics) e de publicidade (Google AdSense) só devem ser ativados quando o usuário optar por aceitar cookies não essenciais. O usuário pode alterar sua preferência a qualquer momento pelo painel de cookies disponível no site.</p>
 
         <p><strong>Compartilhamento com terceiros</strong></p>
         <p>Podemos compartilhar dados com fornecedores que nos auxiliam a operar o site e medir desempenho, como Google (Analytics/AdSense). Esses serviços podem tratar informações conforme suas próprias políticas. Não vendemos dados pessoais.</p>

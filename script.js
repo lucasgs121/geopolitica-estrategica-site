@@ -17,6 +17,32 @@ document.addEventListener('DOMContentLoaded', () => {
     dateSpan.textContent = `${weekday}, ${day} de ${month} de ${year}`;
   }
   updateDate();
+
+
+  // ----- Mobile menu (off-canvas) -----
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenuBtnRow2 = document.getElementById('mobileMenuBtnRow2');
+  const navCloseBtn = document.getElementById('navCloseBtn');
+  const navOverlay = document.getElementById('navOverlay');
+  const mainNav = document.getElementById('mainNav');
+
+  function geOpenNav(){
+    document.body.classList.add('nav-open');
+    if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','true');
+    if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','true');
+  }
+  function geCloseNav(){
+    document.body.classList.remove('nav-open');
+    if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','false');
+    if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','false');
+  }
+
+  if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', geOpenNav);
+  if (mobileMenuBtnRow2) mobileMenuBtnRow2.addEventListener('click', geOpenNav);
+  if (navCloseBtn) navCloseBtn.addEventListener('click', geCloseNav);
+  if (navOverlay) navOverlay.addEventListener('click', geCloseNav);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') geCloseNav(); });
+
   setInterval(updateDate, 60000);
 
   // Dados de notícias para o feed (mockado). Em um cenário real estes dados viriam de uma API.
@@ -309,6 +335,17 @@ document.addEventListener('DOMContentLoaded', () => {
       article.appendChild(contentDiv);
       article.appendChild(badgeDiv);
 
+      // Card clicável: abre a notícia detalhada (âncora na própria página)
+      article.style.cursor = 'pointer';
+      article.addEventListener('click', () => {
+        const target = document.getElementById(`article-${item.id}`);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (item.link && item.link !== '#') {
+          window.open(item.link, '_blank', 'noopener,noreferrer');
+        }
+      });
+
       feedList.appendChild(article);
     });
 
@@ -334,6 +371,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Mobile ticker: mostra sempre as 3 notícias mais recentes (independente de filtro)
+  function updateMobileTicker() {
+    const el = document.getElementById('mobileTickerContent');
+    if (!el) return;
+    const latest = [...feedItems]
+      .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+      .slice(0, 3)
+      .map(i => i.title)
+      .filter(Boolean);
+    const text = latest.length ? latest.join('   |   ') : 'Carregando notícias...';
+    // Duplicar o conteúdo para uma rolagem contínua
+    el.textContent = `${text}   |   ${text}`;
+  }
+
   /**
    * Aplica todos os filtros definidos em `filters` e chama o renderizador.
    */
@@ -355,20 +406,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sempre reinicia para a primeira página ao aplicar novos filtros
     currentPage = 1;
     renderFeed(results);
+    updateMobileTicker();
   }
 
   // Configura eventos para o menu de navegação de categorias
   const categoryItems = document.querySelectorAll('.categories .category');
   categoryItems.forEach(cat => {
     cat.addEventListener('click', (e) => {
-      // Se o item tiver submenu, apenas ativa/desativa categoria principal; o sub será selecionado via clique no submenu
+      const isMobile = window.innerWidth <= 820;
+      const hasSub = cat.classList.contains('has-submenu');
+
+      // Em mobile, categorias com submenu funcionam como "accordion"
+      if (isMobile && hasSub) {
+        cat.classList.toggle('open');
+        e.preventDefault();
+      }
+
       const selectedCategory = cat.dataset.category;
+
       // Remove seleção de todos
       categoryItems.forEach(c => c.classList.remove('active'));
       cat.classList.add('active');
+
       filters.category = selectedCategory;
       filters.subcategory = null;
       applyFilters();
+
+      // Em mobile, se não houver submenu, fecha o menu após selecionar
+      if (isMobile && !hasSub) {
+        try { geCloseNav(); } catch (err) {}
+      }
     });
   });
 
@@ -387,6 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
       categoryItems.forEach(c => c.classList.remove('active'));
       parent.classList.add('active');
       applyFilters();
+      if (window.innerWidth <= 820) { try { geCloseNav(); } catch (err) {} }
     });
   });
 
@@ -411,6 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Busca na navegação
   const navSearchInput = document.getElementById('navSearchInput');
   const navSearchBtn = document.getElementById('navSearchBtn');
+  const mobileSearchInput = document.getElementById('mobileSearchInput');
+  const mobileSearchBtn = document.getElementById('mobileSearchBtn');
   function handleSearch() {
     filters.search = navSearchInput.value.trim();
     applyFilters();
@@ -420,6 +490,22 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     handleSearch();
   });
+
+  // Mobile search mirrors the desktop search logic (same filtering + button behavior)
+  if (mobileSearchInput) {
+    mobileSearchInput.addEventListener('input', () => {
+      navSearchInput.value = mobileSearchInput.value;
+      navSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+  if (mobileSearchBtn) {
+    mobileSearchBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Ensure the desktop input is the single source of truth
+      if (mobileSearchInput) navSearchInput.value = mobileSearchInput.value;
+      navSearchBtn.click();
+    });
+  }
 
   /**
    * -------- Autenticação --------
@@ -743,19 +829,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     {
-      id: 'bdi',
-      name: 'Baltic Dry Index',
-      description: 'Indicador que mede o custo do frete marítimo de commodities a granel.',
-      importance: 'Ajuda a prever tendências de comércio global e demanda por matérias‑primas.',
-      format: 'index',
-      threshold: 2500,
-      impacts: {
-        up: 'Alta do BDI indica forte demanda por commodities e aquecimento do comércio.',
-        down: 'Queda do BDI sugere retração do comércio global e menor demanda.',
-        flat: 'Estabilidade do BDI aponta para um mercado de commodities estável.'
-      }
-    },
-    {
       id: 'vix',
       name: 'VIX',
       description: 'Índice de volatilidade que mede a expectativa de variação do mercado financeiro.',
@@ -784,9 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'natgas': initial = 3.25; break;
       case 'sp500': initial = 4800; break;
       case 'nasdaq': initial = 15000; break;
-      case 'bitcoin': initial = 42000; break;
-      case 'bdi': initial = 2000; break;
-      case 'vix': initial = 20; break;
+      case 'bitcoin': initial = 42000; break;case 'vix': initial = 20; break;
       default: initial = 0;
     }
     marketData[ind.id] = { value: initial, change: 0 };
@@ -1237,71 +1308,52 @@ function geLoadScriptOnce(src, attrs = {}) {
     s.async = true;
     Object.entries(attrs).forEach(([k, v]) => s.setAttribute(k, v));
     document.head.appendChild(s);
-
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    window.gtag = gtag;
-
-    gtag('js', new Date());
-    gtag('config', window.GE_ANALYTICS_MEASUREMENT_ID);
-
-
   }
 
-function geEnableOptionalCookies() {
-  // Ativa recursos opcionais apenas quando houver consentimento para não essenciais.
-  // Configure estas variáveis no window:
-  // window.GE_ANALYTICS_MEASUREMENT_ID = 'G-XXXXXXX';
-  // window.GE_ADSENSE_CLIENT = 'ca-pub-XXXXXXXXXXXXXXXX';
+  function geEnableOptionalCookies() {
+    // Ativa recursos opcionais apenas quando houver consentimento para não essenciais.
+    // Configure futuramente estas variáveis no window (sem quebrar o site hoje):
+    // window.GE_ANALYTICS_MEASUREMENT_ID = 'G-XXXXXXX';
+    // window.GE_ADSENSE_CLIENT = 'ca-pub-XXXXXXXXXXXXXXXX';
+    const gaId = window.GE_ANALYTICS_MEASUREMENT_ID;
+    const adsClient = window.GE_ADSENSE_CLIENT;
 
-  const gaId = window.GE_ANALYTICS_MEASUREMENT_ID;
-  const adsClient = window.GE_ADSENSE_CLIENT;
-
-  // Google Analytics (GA4)
-  if (gaId && typeof gaId === 'string' && gaId.trim()) {
-    geLoadScriptOnce(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`);
-
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ window.dataLayer.push(arguments); }
-    window.gtag = gtag;
-
-    gtag('js', new Date());
-    gtag('config', gaId, { anonymize_ip: true });
-  }
-
-  // Google AdSense
-  if (adsClient && typeof adsClient === 'string' && adsClient.trim()) {
-    geLoadScriptOnce('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
-      'data-ad-client': adsClient,
-      crossorigin: 'anonymous'
-    });
-  }
-}
-
-function geSetCookieConsent(choice) {
-  try {
-    if (choice === 'all') {
-      localStorage.setItem(GE_COOKIE_CONSENT_KEY, 'all');
-    } else if (choice === 'essential') {
-      localStorage.setItem(GE_COOKIE_CONSENT_KEY, 'essential');
-    } else {
-      localStorage.removeItem(GE_COOKIE_CONSENT_KEY);
+    if (gaId && typeof gaId === 'string' && gaId.trim()) {
+      geLoadScriptOnce(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', gaId, { anonymize_ip: true });
     }
-  } catch (e) {}
 
-  if (choice === 'all') geEnableOptionalCookies();
-  closeGenericModal('cookieModal');
-}
-
-function geGetCookieConsent() {
-  try {
-    if (geTempCookieConsent) return geTempCookieConsent;
-    return localStorage.getItem(GE_COOKIE_CONSENT_KEY);
-  } catch (e) {
-    return geTempCookieConsent || null;
+    if (adsClient && typeof adsClient === 'string' && adsClient.trim()) {
+      geLoadScriptOnce('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
+        'data-ad-client': adsClient,
+        crossorigin: 'anonymous'
+      });
+    }
   }
-}
 
+  function geSetCookieConsent(choice) {
+    try {
+      if (choice === 'all') {
+        localStorage.setItem(GE_COOKIE_CONSENT_KEY, 'all');
+      } else {
+        localStorage.removeItem(GE_COOKIE_CONSENT_KEY);
+      }
+    } catch (e) {}
+    if (choice === 'all') geEnableOptionalCookies();
+    closeGenericModal('cookieModal');
+  }
+
+  function geGetCookieConsent() {
+    try {
+      if (geTempCookieConsent) return geTempCookieConsent;
+      return localStorage.getItem(GE_COOKIE_CONSENT_KEY);
+    } catch (e) {
+      return geTempCookieConsent || null;
+    }
+  }
 
   // Cookie modal UI
   const cookieModal = document.getElementById('cookieModal');

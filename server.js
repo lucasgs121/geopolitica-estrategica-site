@@ -236,10 +236,6 @@ app.get('/api/markets', async (req, res) => {
     nasdaq: async () => (await fetchStooqClose('^ndx')) ?? (await fetchStooqClose('ndx')) ?? null,
 
     bitcoin: fetchBTCUSD_CoinGecko,
-
-    // Baltic Dry Index: tenta FRED (BDIY). Se a série não existir ou falhar, fica indisponível.
-    bdi: async () => (await fetchFREDLatest('BDIY')) ?? null,
-
     // VIX: fonte direta CBOE (histórico diário)
     vix: fetchVIX_CBOE
   };
