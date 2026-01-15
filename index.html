@@ -1,674 +1,653 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geopolítica Estratégica</title>
-  <!-- Basic reset and imports -->
-  <!-- Append a version query to force browsers to reload updated styles -->
-  <!-- Bump the version query whenever CSS/JS changes to force the browser to reload the latest file -->
-  <!-- Update version to force cache refresh -->
-  <link rel="stylesheet" href="style.css?v=26">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Geopolítica Estratégica</title>
+<!-- Basic reset and imports -->
+<!-- Append a version query to force browsers to reload updated styles -->
+<!-- Bump the version query whenever CSS/JS changes to force the browser to reload the latest file -->
+<!-- Update version to force cache refresh -->
+<link href="style.css?v=26" rel="stylesheet"/>
 </head>
 <body>
-  <!-- Primary header: logo, status/date and login -->
-  <header class="header">
-    <div class="container header-inner">
-      <!-- Wrap the entire logo area in a link so clicking it returns to the homepage -->
-      <a href="#" class="logo-link">
-        <div class="logo-block">
-          <!-- Use the supplied logo instead of the yellow circle -->
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </a>
-      <div class="header-right">
-        <!-- Display only the date; Terminal Status was removed -->
-        <span class="date-text">domingo, 04 de janeiro de 2026</span>
-        <!-- Login button opens the authentication modal -->
-        <button class="login-btn" id="openLogin">ENTRAR</button>
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">
-          <span class="mobile-menu-icon" aria-hidden="true">☰</span>
-        </button>
-        <!-- Placeholder for showing logged in user info; filled via JS -->
-        <div class="user-info hidden" id="userInfo">
-          <span class="user-email"></span>
-          <button class="logout-btn" id="logoutBtn">Sair</button>
-        </div>
-      </div>
-    </div>
-  </header>
+<!-- Primary header: logo, status/date and login -->
+<header class="header">
+<div class="container header-inner">
+<!-- Wrap the entire logo area in a link so clicking it returns to the homepage -->
+<a class="logo-link" href="#">
+<div class="logo-block">
+<!-- Use the supplied logo instead of the yellow circle -->
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</a>
+<div class="header-right">
+<!-- Display only the date; Terminal Status was removed -->
+<span class="date-text">domingo, 04 de janeiro de 2026</span>
+<!-- Login button opens the authentication modal -->
+<button class="login-btn" id="openLogin">ENTRAR</button>
+<button aria-controls="mainNav" aria-expanded="false" aria-label="Abrir menu" class="mobile-menu-btn" id="mobileMenuBtn">
+<span aria-hidden="true" class="mobile-menu-icon">☰</span>
+</button>
+<!-- Placeholder for showing logged in user info; filled via JS -->
+<div class="user-info hidden" id="userInfo">
+<span class="user-email"></span>
+<button class="logout-btn" id="logoutBtn">Sair</button>
+</div>
+</div>
+</div>
+</header>
+<!-- Mobile header line 2 is now the BREAKING ticker (with menu button on the right). -->
+<!-- Mobile-only line 3: minimal ticker with the last 3 news titles -->
+<div aria-label="Breaking News" class="mobile-ticker mobile-only">
+<div class="container mobile-ticker-inner">
+<span class="mobile-ticker-label"><span class="mobile-ticker-badge">⚡ BREAKING</span>:</span>
+<div aria-hidden="true" class="mobile-ticker-track">
+<div class="mobile-ticker-content" id="mobileTickerContent"></div>
+</div>
+<button aria-label="Abrir menu" class="mobile-menu-btn" id="mobileMenuBtnBreaking">
+<span aria-hidden="true" class="mobile-menu-icon">☰</span>
+</button>
+</div>
+</div>
+<!-- Authentication modal (hidden by default) -->
+<div class="modal hidden" id="authModal">
+<div class="modal-content">
+<button aria-label="Fechar" class="modal-close" id="closeModal">×</button>
+<!-- Insert the site logo at the top of the authentication modal wrapped in a coloured strip -->
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<div class="auth-tabs">
+<button class="tab active" id="loginTab">Login</button>
+<button class="tab" id="registerTab">Cadastro</button>
+</div>
+<div class="auth-forms">
+<!-- Login form -->
+<form class="auth-form" id="loginForm">
+<label for="loginEmail">Email</label>
+<input id="loginEmail" placeholder="Seu email" required="" type="email"/>
+<label for="loginPassword">Senha</label>
+<input id="loginPassword" placeholder="Sua senha" required="" type="password"/>
+<button class="auth-submit" type="submit">Entrar</button>
+</form>
+<!-- Registration form -->
+<form class="auth-form hidden" id="registerForm">
+<label for="registerEmail">Email</label>
+<input id="registerEmail" placeholder="Seu email" required="" type="email"/>
+<label for="registerPassword">Senha</label>
+<input id="registerPassword" placeholder="Crie uma senha" required="" type="password"/>
+<label for="registerConfirm">Confirmar senha</label>
+<input id="registerConfirm" placeholder="Repita a senha" required="" type="password"/>
+<div class="subscribe-row">
+<input id="subscribeNews" type="checkbox">
+<label for="subscribeNews">Quero receber notícias por email</label>
+</input></div>
+<button class="auth-submit" type="submit">Cadastrar</button>
+</form>
+</div>
+</div>
+</div>
+<!-- Site content wrapper: hidden until login -->
+<div id="siteContent">
+<!-- Main navigation with categories, submenus and search -->
+<nav class="main-nav" id="mainNav">
+<div class="container nav-inner">
+<div class="nav-topbar">
+<div aria-label="Buscar notícias" class="nav-search drawer-search mobile-only" role="search">
+<input aria-label="Buscar" id="mobileSearchInput" placeholder="Buscar..." type="text">
+<button aria-label="Pesquisar" class="nav-search-btn" id="mobileSearchBtn">
+<svg aria-hidden="true" fill="none" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.5 18.5C14.6421 18.5 18 15.1421 18 11C18 6.85786 14.6421 3.5 10.5 3.5C6.35786 3.5 3 6.85786 3 11C3 15.1421 6.35786 18.5 10.5 18.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M20.9999 20.9999L16.6499 16.6499" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</input></div>
+<button aria-label="Fechar menu" class="nav-close-btn" id="navCloseBtn">✕</button>
+</div>
+<!-- Wrap categories list in its own container to center it horizontally -->
+<div class="categories-container">
+<ul class="categories">
+<li class="category" data-category="INICIO">Início</li>
+<li class="category" data-category="CONFLITOS">Conflitos
+          <ul class="submenu">
+<li data-sub="ucrania-russia">Ucrânia x Rússia</li>
+<li data-sub="israel-ira">Israel x Irã / Oriente Médio</li>
+<li data-sub="china-taiwan">China x Taiwan</li>
+<li data-sub="venezuela-eua">Venezuela x EUA</li>
+<li data-sub="coreia-norte">Coreia do Norte</li>
+<li data-sub="mar-sul-china">Mar do Sul da China</li>
+<li data-sub="europa-oriental">Europa Oriental</li>
+</ul>
+</li>
+<li class="category" data-category="GEO">Geopolítica
+          <ul class="submenu">
+<li data-sub="relacoes-internacionais">Relações internacionais</li>
+<li data-sub="blocos-poder">Blocos de poder (OTAN, BRICS, G7)</li>
+<li data-sub="diplomacia">Diplomacia</li>
+<li data-sub="sancoes-economicas">Sanções econômicas</li>
+<li data-sub="guerras-hibridas">Guerras híbridas e guerra informacional</li>
+</ul>
+</li>
+<li class="category" data-category="DEFESA">Defesa
+          <ul class="submenu">
+<li data-sub="movimentacoes-militares">Movimentações militares</li>
+<li data-sub="tecnologias-defesa">Tecnologias de defesa</li>
+<li data-sub="armas-sistemas">Armas e sistemas</li>
+<li data-sub="exercitos-mundo">Exércitos do mundo</li>
+<li data-sub="operacoes-exercicios">Operações e exercícios militares</li>
+</ul>
+</li>
+<li class="category" data-category="CIBER">Cibersegurança
+          <ul class="submenu">
+<li data-sub="ciberataques">Ciberataques</li>
+<li data-sub="espionagem">Espionagem</li>
+<li data-sub="guerra-cibernetica">Guerra cibernética</li>
+<li data-sub="operacoes-psicologicas">Operações psicológicas</li>
+<li data-sub="desinformacao">Desinformação e guerra cognitiva</li>
+</ul>
+</li>
+<li class="category" data-category="ECON">Economia
+          <ul class="submenu">
+<li data-sub="sancoes-internacionais">Sanções internacionais</li>
+<li data-sub="energia-petroleo">Energia e petróleo</li>
+<li data-sub="comercio-global">Comércio global</li>
+<li data-sub="impactos-guerra">Impactos econômicos das guerras</li>
+<li data-sub="crises-financeiras">Crises financeiras</li>
+</ul>
+</li>
+<!-- Remove the flag/BR prefix and keep only the text for the Brazil section -->
+<li class="category" data-category="BRASIL">Brasil
+          <ul class="submenu">
+<li data-sub="posicao-brasil">Posição do Brasil</li>
+<li data-sub="diplomacia-brasileira">Diplomacia brasileira</li>
+<li data-sub="liderancas">Lula, Itamaraty, Forças Armadas</li>
+<li data-sub="impactos-brasil">Impactos globais para o Brasil</li>
+</ul>
+</li>
+<li class="category" data-category="REGIOES">Macro-regiões
+          <ul class="submenu">
+<li data-sub="americas">Américas</li>
+<li data-sub="europa">Europa</li>
+<li data-sub="asia">Ásia</li>
+<li data-sub="africa">África</li>
+<li data-sub="oceania">Oceania</li>
+<li data-sub="antartida">Antártida</li>
+<li data-sub="norte-sul">Norte Global vs. Sul Global</li>
+<li data-sub="ocidental-oriental">Mundo Ocidental vs. Mundo Oriental</li>
+</ul>
+</li>
+</ul>
+<div class="nav-footer-links mobile-only">
+<a class="footer-modal-link" data-modal="aboutModal" href="#">Sobre Nós</a>
+<a class="footer-modal-link" data-modal="mvvModal" href="#">Missão, Visão &amp; Valores</a>
+<a class="footer-modal-link" data-modal="partnerModal" href="#">Parceria</a>
+<a class="footer-modal-link" data-modal="contactModal" href="#">Contato</a>
+<a class="footer-modal-link" data-modal="termsModal" href="#">Termos de Uso</a>
+<a class="footer-modal-link" data-modal="privacyModal" href="#">Política de Privacidade</a>
+<a class="footer-modal-link" data-modal="cookieModal" href="#">Cookies</a>
+</div></div>
+<!-- Search bar within the navigation -->
+<div class="nav-search">
+<input aria-label="Pesquisar" id="navSearchInput" placeholder="Buscar..." type="text"/>
+<!-- Use an inline SVG for a more modern magnifying glass icon -->
+<button aria-label="Buscar" class="nav-search-btn" id="navSearchBtn">
+<svg class="search-icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="16"><circle cx="11" cy="11" r="8"></circle><line x1="21" x2="16.65" y1="21" y2="16.65"></line></svg>
+</button>
+</div>
+<!-- Mobile: quick links (same modals as the desktop footer) -->
 
-  <!-- Mobile-only header line 2: search + hamburger (does not affect desktop layout) -->
-  <div class="container mobile-header-row2 mobile-only">
-    <div class="nav-search mobile-search" role="search" aria-label="Buscar notícias">
-      <input type="text" id="mobileSearchInput" placeholder="Buscar..." aria-label="Buscar" />
-      <button id="mobileSearchBtn" aria-label="Pesquisar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z" stroke="currentColor" stroke-width="2"/>
-          <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-    <button class="mobile-menu-btn mobile-menu-btn-row2" id="mobileMenuBtnRow2" aria-label="Abrir menu" aria-controls="mainNav" aria-expanded="false">
-      <span class="mobile-menu-icon" aria-hidden="true">☰</span>
-    </button>
-  </div>
-
-  <!-- Mobile-only line 3: minimal ticker with the last 3 news titles -->
-  <div class="mobile-ticker mobile-only" aria-label="Breaking News">
-    <div class="container mobile-ticker-inner">
-      <span class="mobile-ticker-label"><span class="mobile-ticker-badge">⚡ BREAKING</span>:</span>
-      <div class="mobile-ticker-track" aria-hidden="true">
-        <div class="mobile-ticker-content" id="mobileTickerContent"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Authentication modal (hidden by default) -->
-  <div id="authModal" class="modal hidden">
-    <div class="modal-content">
-      <button class="modal-close" id="closeModal" aria-label="Fechar">×</button>
-      <!-- Insert the site logo at the top of the authentication modal wrapped in a coloured strip -->
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <div class="auth-tabs">
-        <button id="loginTab" class="tab active">Login</button>
-        <button id="registerTab" class="tab">Cadastro</button>
-      </div>
-      <div class="auth-forms">
-        <!-- Login form -->
-        <form id="loginForm" class="auth-form">
-          <label for="loginEmail">Email</label>
-          <input type="email" id="loginEmail" required placeholder="Seu email">
-          <label for="loginPassword">Senha</label>
-          <input type="password" id="loginPassword" required placeholder="Sua senha">
-          <button type="submit" class="auth-submit">Entrar</button>
-        </form>
-        <!-- Registration form -->
-        <form id="registerForm" class="auth-form hidden">
-          <label for="registerEmail">Email</label>
-          <input type="email" id="registerEmail" required placeholder="Seu email">
-          <label for="registerPassword">Senha</label>
-          <input type="password" id="registerPassword" required placeholder="Crie uma senha">
-          <label for="registerConfirm">Confirmar senha</label>
-          <input type="password" id="registerConfirm" required placeholder="Repita a senha">
-          <div class="subscribe-row">
-            <input type="checkbox" id="subscribeNews" />
-            <label for="subscribeNews">Quero receber notícias por email</label>
-          </div>
-          <button type="submit" class="auth-submit">Cadastrar</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Site content wrapper: hidden until login -->
-  <div id="siteContent">
-  <!-- Main navigation with categories, submenus and search -->
-  <nav class="main-nav" id="mainNav">
-    <div class="container nav-inner">
-      <button class="nav-close-btn" id="navCloseBtn" aria-label="Fechar menu">✕</button>
-      <!-- Wrap categories list in its own container to center it horizontally -->
-      <div class="categories-container">
-      <ul class="categories">
-        <li class="category" data-category="INICIO">Início</li>
-        <li class="category has-submenu" data-category="CONFLITOS">Conflitos
-          <ul class="submenu">
-            <li data-sub="ucrania-russia">Ucrânia x Rússia</li>
-            <li data-sub="israel-ira">Israel x Irã / Oriente Médio</li>
-            <li data-sub="china-taiwan">China x Taiwan</li>
-            <li data-sub="venezuela-eua">Venezuela x EUA</li>
-            <li data-sub="coreia-norte">Coreia do Norte</li>
-            <li data-sub="mar-sul-china">Mar do Sul da China</li>
-            <li data-sub="europa-oriental">Europa Oriental</li>
-          </ul>
-        </li>
-        <li class="category has-submenu" data-category="GEO">Geopolítica
-          <ul class="submenu">
-            <li data-sub="relacoes-internacionais">Relações internacionais</li>
-            <li data-sub="blocos-poder">Blocos de poder (OTAN, BRICS, G7)</li>
-            <li data-sub="diplomacia">Diplomacia</li>
-            <li data-sub="sancoes-economicas">Sanções econômicas</li>
-            <li data-sub="guerras-hibridas">Guerras híbridas e guerra informacional</li>
-          </ul>
-        </li>
-        <li class="category has-submenu" data-category="DEFESA">Defesa
-          <ul class="submenu">
-            <li data-sub="movimentacoes-militares">Movimentações militares</li>
-            <li data-sub="tecnologias-defesa">Tecnologias de defesa</li>
-            <li data-sub="armas-sistemas">Armas e sistemas</li>
-            <li data-sub="exercitos-mundo">Exércitos do mundo</li>
-            <li data-sub="operacoes-exercicios">Operações e exercícios militares</li>
-          </ul>
-        </li>
-        <li class="category has-submenu" data-category="CIBER">Cibersegurança
-          <ul class="submenu">
-            <li data-sub="ciberataques">Ciberataques</li>
-            <li data-sub="espionagem">Espionagem</li>
-            <li data-sub="guerra-cibernetica">Guerra cibernética</li>
-            <li data-sub="operacoes-psicologicas">Operações psicológicas</li>
-            <li data-sub="desinformacao">Desinformação e guerra cognitiva</li>
-          </ul>
-        </li>
-        <li class="category has-submenu" data-category="ECON">Economia
-          <ul class="submenu">
-            <li data-sub="sancoes-internacionais">Sanções internacionais</li>
-            <li data-sub="energia-petroleo">Energia e petróleo</li>
-            <li data-sub="comercio-global">Comércio global</li>
-            <li data-sub="impactos-guerra">Impactos econômicos das guerras</li>
-            <li data-sub="crises-financeiras">Crises financeiras</li>
-          </ul>
-        </li>
-        <!-- Remove the flag/BR prefix and keep only the text for the Brazil section -->
-        <li class="category has-submenu" data-category="BRASIL">Brasil
-          <ul class="submenu">
-            <li data-sub="posicao-brasil">Posição do Brasil</li>
-            <li data-sub="diplomacia-brasileira">Diplomacia brasileira</li>
-            <li data-sub="liderancas">Lula, Itamaraty, Forças Armadas</li>
-            <li data-sub="impactos-brasil">Impactos globais para o Brasil</li>
-          </ul>
-        </li>
-        <li class="category has-submenu" data-category="REGIOES">Macro-regiões
-          <ul class="submenu">
-            <li data-sub="americas">Américas</li>
-            <li data-sub="europa">Europa</li>
-            <li data-sub="asia">Ásia</li>
-            <li data-sub="africa">África</li>
-            <li data-sub="oceania">Oceania</li>
-            <li data-sub="antartida">Antártida</li>
-            <li data-sub="norte-sul">Norte Global vs. Sul Global</li>
-            <li data-sub="ocidental-oriental">Mundo Ocidental vs. Mundo Oriental</li>
-          </ul>
-        </li>
-      </ul>
-      </div>
-      <!-- Search bar within the navigation -->
-      <div class="nav-search">
-        <input type="text" id="navSearchInput" placeholder="Buscar..." aria-label="Pesquisar">
-        <!-- Use an inline SVG for a more modern magnifying glass icon -->
-        <button id="navSearchBtn" class="nav-search-btn" aria-label="Buscar">
-          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
-      </div>
-    </div>
-  </nav>
-<div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
-
-  <!-- Breaking news ticker -->
-  <div class="breaking">
-    <div class="container breaking-inner">
-      <div class="breaking-tag">
-        <span class="lightning">⚡</span>
-        <span class="breaking-label">BREAKING NEWS</span>
-      </div>
-      <!-- The ticker contains only the headline, which is clickable -->
-      <div class="breaking-ticker">
-        <!-- Add navigation controls and an empty title placeholder; the title will be filled via JavaScript -->
-        <button class="breaking-prev" aria-label="Notícia anterior">‹</button>
-        <!-- Wrap the headline and the next arrow in a flex container so the
+</div>
+</nav>
+<div aria-hidden="true" class="nav-overlay" id="navOverlay"></div>
+<!-- Breaking news ticker -->
+<div class="breaking">
+<div class="container breaking-inner">
+<div class="breaking-tag">
+<span class="lightning">⚡</span>
+<span class="breaking-label">BREAKING NEWS</span>
+</div>
+<!-- The ticker contains only the headline, which is clickable -->
+<div class="breaking-ticker">
+<!-- Add navigation controls and an empty title placeholder; the title will be filled via JavaScript -->
+<button aria-label="Notícia anterior" class="breaking-prev">‹</button>
+<!-- Wrap the headline and the next arrow in a flex container so the
              arrow appears immediately after the text rather than at the far right. -->
-        <div class="breaking-title-wrapper">
-          <span class="breaking-title"></span>
-          <button class="breaking-next" aria-label="Próxima notícia">›</button>
-        </div>
-        <!-- Social media icons on the right using outline style -->
-        <div class="social-icons">
-          <!-- Instagram: white outline version -->
-          <a class="social-icon" href="https://www.instagram.com/geopoliticaestrategica" target="_blank" aria-label="Instagram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- rounded square outer frame -->
-              <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
-              <!-- inner circle lens -->
-              <circle cx="12" cy="12" r="5"></circle>
-              <!-- small dot in corner, filled to stand out -->
-              <circle cx="17" cy="7" r="1.5" fill="currentColor" stroke="none"></circle>
-            </svg>
-          </a>
-          <!-- YouTube: white outline version with filled play triangle -->
-          <a class="social-icon" href="https://www.youtube.com/@GeopoliticaEstrategica" target="_blank" aria-label="YouTube">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- rounded rectangle frame -->
-              <rect x="3" y="7" width="18" height="10" rx="3" ry="3"></rect>
-              <!-- play triangle filled -->
-              <polygon points="10,9 16,12 10,15" fill="currentColor" stroke="none"></polygon>
-            </svg>
-          </a>
-          <!-- Telegram: white outline paper plane -->
-          <a class="social-icon" href="https://t.me/GeopoliticaEstrategicaInfo" target="_blank" aria-label="Telegram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-              <path d="M3 12 L21 5 L17 19 L12 14 L9 17 L8 13 Z"></path>
-            </svg>
-          </a>
-          <!-- Facebook: white outline circle with filled f -->
-          <a class="social-icon" href="https://www.facebook.com/Geopoliticaestrategicanews" target="_blank" aria-label="Facebook">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- circular outline -->
-              <circle cx="12" cy="12" r="10"></circle>
-              <!-- stylised f -->
-              <path d="M13 7h-2c-.552 0-1 .448-1 1v2h-1v2h1v5h2v-5h2l1-2h-3V9c0-.552.448-1 1-1h2V6h-2z" fill="currentColor" stroke="none"></path>
-            </svg>
-          </a>
-          <!-- WhatsApp: white outline bubble with handset (matching other icons) -->
-          <a class="social-icon" href="https://whatsapp.com/channel/0029VbBmfsE5kg74yWN68f2d" target="_blank" aria-label="WhatsApp">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"></path>
-              <path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"></path>
-            </svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Removed the filters bar to simplify the UI; filtering is now handled by categories and search -->
-
-  <!-- Main content area with feed and sidebar -->
-  <main class="main-content">
-    <div class="container">
-      <!-- Destaques principais ocuparão toda a largura desta wrapper -->
-      <div id="topHighlightsWrapper" class="top-highlights-wrapper"></div>
-      <!-- Feed e barra lateral em uma linha a partir da segunda seção -->
-      <div class="feed-layout">
-        <div class="feed-column">
-          <!-- Título do feed alterado conforme solicitação do usuário -->
-          <h1 class="feed-title">Últimas Notícias</h1>
-          <div class="feed-update">ATUALIZAÇÃO EM TEMPO REAL</div>
-          <!-- Feed items serão renderizados aqui via script.js -->
-          <div id="feedList" class="feed-list"></div>
-        </div>
-        <aside class="sidebar-column">
-          <!-- Updated Markets widget: larger list with real‑time updates. The trending widget was removed to
+<div class="breaking-title-wrapper">
+<span class="breaking-title"></span>
+<button aria-label="Próxima notícia" class="breaking-next">›</button>
+</div>
+<!-- Social media icons on the right using outline style -->
+<div class="social-icons">
+<!-- Instagram: white outline version -->
+<a aria-label="Instagram" class="social-icon" href="https://www.instagram.com/geopoliticaestrategica" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- rounded square outer frame -->
+<rect height="18" rx="5" ry="5" width="18" x="3" y="3"></rect>
+<!-- inner circle lens -->
+<circle cx="12" cy="12" r="5"></circle>
+<!-- small dot in corner, filled to stand out -->
+<circle cx="17" cy="7" fill="currentColor" r="1.5" stroke="none"></circle>
+</svg>
+</a>
+<!-- YouTube: white outline version with filled play triangle -->
+<a aria-label="YouTube" class="social-icon" href="https://www.youtube.com/@GeopoliticaEstrategica" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- rounded rectangle frame -->
+<rect height="10" rx="3" ry="3" width="18" x="3" y="7"></rect>
+<!-- play triangle filled -->
+<polygon fill="currentColor" points="10,9 16,12 10,15" stroke="none"></polygon>
+</svg>
+</a>
+<!-- Telegram: white outline paper plane -->
+<a aria-label="Telegram" class="social-icon" href="https://t.me/GeopoliticaEstrategicaInfo" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<path d="M3 12 L21 5 L17 19 L12 14 L9 17 L8 13 Z"></path>
+</svg>
+</a>
+<!-- Facebook: white outline circle with filled f -->
+<a aria-label="Facebook" class="social-icon" href="https://www.facebook.com/Geopoliticaestrategicanews" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- circular outline -->
+<circle cx="12" cy="12" r="10"></circle>
+<!-- stylised f -->
+<path d="M13 7h-2c-.552 0-1 .448-1 1v2h-1v2h1v5h2v-5h2l1-2h-3V9c0-.552.448-1 1-1h2V6h-2z" fill="currentColor" stroke="none"></path>
+</svg>
+</a>
+<!-- WhatsApp: white outline bubble with handset (matching other icons) -->
+<a aria-label="WhatsApp" class="social-icon" href="https://whatsapp.com/channel/0029VbBmfsE5kg74yWN68f2d" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 0h24v24H0z" fill="none" stroke="none"></path>
+<path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"></path>
+<path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"></path>
+</svg>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Removed the filters bar to simplify the UI; filtering is now handled by categories and search -->
+<!-- Main content area with feed and sidebar -->
+<main class="main-content">
+<div class="container">
+<!-- Destaques principais ocuparão toda a largura desta wrapper -->
+<div class="top-highlights-wrapper" id="topHighlightsWrapper"></div>
+<!-- Feed e barra lateral em uma linha a partir da segunda seção -->
+<div class="feed-layout">
+<div class="feed-column">
+<!-- Título do feed alterado conforme solicitação do usuário -->
+<h1 class="feed-title">Últimas Notícias</h1>
+<div class="feed-update">ATUALIZAÇÃO EM TEMPO REAL</div>
+<!-- Feed items serão renderizados aqui via script.js -->
+<div class="feed-list" id="feedList"></div>
+</div>
+<aside class="sidebar-column">
+<!-- Updated Markets widget: larger list with real‑time updates. The trending widget was removed to
                make room for additional indicators. -->
-          <div class="markets-widget">
-            <div class="markets-header"><span class="markets-title-icon" aria-hidden="true">📈</span> MERCADOS ESTRATÉGICOS</div>
-            <!-- Small caption indicating data freshness and last update time -->
-            <div class="markets-update">Atualização em tempo real • Última atualização: <span id="marketsTimestamp">--:--</span></div>
-            <!-- List of market indicators. Populated dynamically via script.js -->
-            <ul id="marketsList" class="markets-list"></ul>
-          </div>
-        </aside>
-      </div>
-    </div>
-  </main>
-  
-  <!-- Footer -->
-  <footer class="site-footer" aria-label="Rodapé Geopolítica Estratégica">
-    <div class="container footer-inner">
-      <div class="footer-brand">
-      <a href="#" class="footer-logo-link" aria-label="Voltar para Início">
-        <div class="logo-block footer-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="footer-logo-image">
-          <div class="logo-text-block footer-logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </a>
+<div class="markets-widget">
+<div class="markets-header"><span aria-hidden="true" class="markets-title-icon">📈</span> MERCADOS ESTRATÉGICOS</div>
+<!-- Small caption indicating data freshness and last update time -->
+<div class="markets-update">Atualização em tempo real • Última atualização: <span id="marketsTimestamp">--:--</span></div>
+<!-- List of market indicators. Populated dynamically via script.js -->
+<ul class="markets-list" id="marketsList"></ul>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer aria-label="Rodapé Geopolítica Estratégica" class="site-footer">
+<div class="container footer-inner">
+<div class="footer-brand">
+<a aria-label="Voltar para Início" class="footer-logo-link" href="#">
+<div class="logo-block footer-logo-block">
+<img alt="Geopolítica Estratégica" class="footer-logo-image" src="logo.png"/>
+<div class="logo-text-block footer-logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</a>
 <p class="footer-text footer-text-strong">
         Mais do que noticiar fatos, buscamos explicar causas, interesses, impactos e possíveis desdobramentos, conectando política, história, economia e poder militar em uma única visão estratégica.
       </p>
-
-      <!-- Social links (match header icons: same size, color and style) -->
-      <div class="social-icons footer-social-icons" aria-label="Redes sociais">
-          <!-- Instagram: white outline version -->
-          <a class="social-icon" href="https://www.instagram.com/geopoliticaestrategica" target="_blank" aria-label="Instagram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- rounded square outer frame -->
-              <rect x="3" y="3" width="18" height="18" rx="5" ry="5"></rect>
-              <!-- inner circle lens -->
-              <circle cx="12" cy="12" r="5"></circle>
-              <!-- small dot in corner, filled to stand out -->
-              <circle cx="17" cy="7" r="1.5" fill="currentColor" stroke="none"></circle>
-            </svg>
-          </a>
-          <!-- YouTube: white outline version with filled play triangle -->
-          <a class="social-icon" href="https://www.youtube.com/@GeopoliticaEstrategica" target="_blank" aria-label="YouTube">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- rounded rectangle frame -->
-              <rect x="3" y="7" width="18" height="10" rx="3" ry="3"></rect>
-              <!-- play triangle filled -->
-              <polygon points="10,9 16,12 10,15" fill="currentColor" stroke="none"></polygon>
-            </svg>
-          </a>
-          <!-- Telegram: white outline paper plane -->
-          <a class="social-icon" href="https://t.me/GeopoliticaEstrategicaInfo" target="_blank" aria-label="Telegram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-              <path d="M3 12 L21 5 L17 19 L12 14 L9 17 L8 13 Z"></path>
-            </svg>
-          </a>
-          <!-- Facebook: white outline circle with filled f -->
-          <a class="social-icon" href="https://www.facebook.com/Geopoliticaestrategicanews" target="_blank" aria-label="Facebook">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <!-- circular outline -->
-              <circle cx="12" cy="12" r="10"></circle>
-              <!-- stylised f -->
-              <path d="M13 7h-2c-.552 0-1 .448-1 1v2h-1v2h1v5h2v-5h2l1-2h-3V9c0-.552.448-1 1-1h2V6h-2z" fill="currentColor" stroke="none"></path>
-            </svg>
-          </a>
-          <!-- WhatsApp: white outline bubble with handset (matching other icons) -->
-          <a class="social-icon" href="https://whatsapp.com/channel/0029VbBmfsE5kg74yWN68f2d" target="_blank" aria-label="WhatsApp">
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-              <path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"></path>
-              <path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"></path>
-            </svg>
-          </a>
-        </div>
-    </div>
-
-      <div class="footer-columns">
-        <div class="footer-col">
-          <h3 class="footer-title">Links rápidos</h3>
-          <ul class="footer-links">
-            <li><a href="#" class="footer-link footer-category-link" data-category="INICIO">Início</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="CONFLITOS">Conflitos</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="GEO">Geopolítica</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="DEFESA">Defesa</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="CIBER">Cibersegurança</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="ECON">Economia</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="BRASIL">Brasil</a></li>
-            <li><a href="#" class="footer-link footer-category-link" data-category="REGIOES">Macro-regiões</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-col">
-          <h3 class="footer-title">Institucional</h3>
-          <ul class="footer-links">
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="aboutModal">Sobre nós</a></li>
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="mvvModal">Missão, Visão &amp; Valores</a></li>
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="partnerModal">Parceria</a></li>
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="contactModal">Contato</a></li>
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="termsModal">Termos de Uso</a></li>
-            <li><a href="#" class="footer-link footer-modal-link" data-modal="privacyModal">Política de Privacidade</a></li>
-          </ul>
-        </div>
+<!-- Social links (match header icons: same size, color and style) -->
+<div aria-label="Redes sociais" class="social-icons footer-social-icons">
+<!-- Instagram: white outline version -->
+<a aria-label="Instagram" class="social-icon" href="https://www.instagram.com/geopoliticaestrategica" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- rounded square outer frame -->
+<rect height="18" rx="5" ry="5" width="18" x="3" y="3"></rect>
+<!-- inner circle lens -->
+<circle cx="12" cy="12" r="5"></circle>
+<!-- small dot in corner, filled to stand out -->
+<circle cx="17" cy="7" fill="currentColor" r="1.5" stroke="none"></circle>
+</svg>
+</a>
+<!-- YouTube: white outline version with filled play triangle -->
+<a aria-label="YouTube" class="social-icon" href="https://www.youtube.com/@GeopoliticaEstrategica" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- rounded rectangle frame -->
+<rect height="10" rx="3" ry="3" width="18" x="3" y="7"></rect>
+<!-- play triangle filled -->
+<polygon fill="currentColor" points="10,9 16,12 10,15" stroke="none"></polygon>
+</svg>
+</a>
+<!-- Telegram: white outline paper plane -->
+<a aria-label="Telegram" class="social-icon" href="https://t.me/GeopoliticaEstrategicaInfo" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<path d="M3 12 L21 5 L17 19 L12 14 L9 17 L8 13 Z"></path>
+</svg>
+</a>
+<!-- Facebook: white outline circle with filled f -->
+<a aria-label="Facebook" class="social-icon" href="https://www.facebook.com/Geopoliticaestrategicanews" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<!-- circular outline -->
+<circle cx="12" cy="12" r="10"></circle>
+<!-- stylised f -->
+<path d="M13 7h-2c-.552 0-1 .448-1 1v2h-1v2h1v5h2v-5h2l1-2h-3V9c0-.552.448-1 1-1h2V6h-2z" fill="currentColor" stroke="none"></path>
+</svg>
+</a>
+<!-- WhatsApp: white outline bubble with handset (matching other icons) -->
+<a aria-label="WhatsApp" class="social-icon" href="https://whatsapp.com/channel/0029VbBmfsE5kg74yWN68f2d" target="_blank">
+<svg fill="none" height="28" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="28" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 0h24v24H0z" fill="none" stroke="none"></path>
+<path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9"></path>
+<path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1"></path>
+</svg>
+</a>
 </div>
-      </div>
-    </div>
+</div>
+<div class="footer-columns">
+<div class="footer-col">
+<h3 class="footer-title">Links rápidos</h3>
+<ul class="footer-links">
+<li><a class="footer-link footer-category-link" data-category="INICIO" href="#">Início</a></li>
+<li><a class="footer-link footer-category-link" data-category="CONFLITOS" href="#">Conflitos</a></li>
+<li><a class="footer-link footer-category-link" data-category="GEO" href="#">Geopolítica</a></li>
+<li><a class="footer-link footer-category-link" data-category="DEFESA" href="#">Defesa</a></li>
+<li><a class="footer-link footer-category-link" data-category="CIBER" href="#">Cibersegurança</a></li>
+<li><a class="footer-link footer-category-link" data-category="ECON" href="#">Economia</a></li>
+<li><a class="footer-link footer-category-link" data-category="BRASIL" href="#">Brasil</a></li>
+<li><a class="footer-link footer-category-link" data-category="REGIOES" href="#">Macro-regiões</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h3 class="footer-title">Institucional</h3>
+<ul class="footer-links">
+<li><a class="footer-link footer-modal-link" data-modal="aboutModal" href="#">Sobre nós</a></li>
+<li><a class="footer-link footer-modal-link" data-modal="mvvModal" href="#">Missão, Visão &amp; Valores</a></li>
+<li><a class="footer-link footer-modal-link" data-modal="partnerModal" href="#">Parceria</a></li>
+<li><a class="footer-link footer-modal-link" data-modal="contactModal" href="#">Contato</a></li>
+<li><a class="footer-link footer-modal-link" data-modal="termsModal" href="#">Termos de Uso</a></li>
+<li><a class="footer-link footer-modal-link" data-modal="privacyModal" href="#">Política de Privacidade</a></li>
+</ul>
+</div>
+</div>
+</div>
+</footer></div>
+<div class="footer-bottom">
+<div class="container footer-bottom-inner">
+<p class="footer-copy"><div style="text-align:center;">© 2026 Geopolítica Estratégica. Todos os direitos reservados.</div></p>
+</div>
+</div>
 
-    <div class="footer-bottom">
-      <div class="container footer-bottom-inner">
-        <p class="footer-copy"><div style="text-align:center;">© 2026 Geopolítica Estratégica. Todos os direitos reservados.</div></p>
-      </div>
-    </div>
-  </footer>
-
-
-  </div> <!-- end of siteContent wrapper -->
-
-  <!-- Indicator information modal (hidden by default). When a market item is clicked,
+ <!-- end of siteContent wrapper -->
+<!-- Indicator information modal (hidden by default). When a market item is clicked,
        this modal appears to explain the chosen indicator in simple, clear language. -->
-  <div id="indicatorModal" class="modal hidden">
-    <div class="modal-content indicator-modal-content">
-      <button class="modal-close" id="closeIndicatorModal" aria-label="Fechar">×</button>
-      <!-- Blue strip with logo at the top -->
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <div class="indicator-modal-body">
-        <h2 id="indicatorTitle" class="indicator-title"></h2>
-        <h3 class="modal-section-title">O que é</h3>
-        <p id="indicatorDescription" class="indicator-description"></p>
-        <h3 class="modal-section-title">Por que importa</h3>
-        <p id="indicatorImportance" class="indicator-importance"></p>
-        <h3 class="modal-section-title">Impacto atual</h3>
-        <p id="indicatorImpact" class="indicator-impact"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Optional JavaScript for interactive features -->
-  <!-- Append a version query to force browsers to reload updated scripts -->
-  <!-- Update version to force cache refresh -->
-  <script src="script.js?v=15"></script>
-
-  <!-- Institutional modals -->
-  <div id="aboutModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
-      <button class="modal-close" data-close-modal="aboutModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="aboutModalTitle" class="modal-title">Sobre Nós | Geopolítica Estratégica</h2>
-      <div class="modal-body">
-        <p>O Geopolítica Estratégica nasceu da necessidade de entender o mundo para além das manchetes. Em um cenário global cada vez mais instável, marcado por conflitos armados, disputas de poder, crises econômicas e transformações políticas profundas, acreditamos que informação sem análise é apenas ruído. Nosso trabalho começa exatamente onde a maioria das notícias termina.</p>
-        <p>Somos uma plataforma independente dedicada a acompanhar, interpretar e traduzir os principais acontecimentos da geopolítica mundial de forma clara, acessível e estrategicamente orientada. Nosso foco está nos grandes temas que moldam o presente e o futuro das nações: guerras, alianças militares, relações internacionais, economia global, segurança, tecnologia, energia e disputas por influência no sistema internacional.</p>
-        <p>A proposta do Geopolítica Estratégica é simples e, ao mesmo tempo, ambiciosa: oferecer ao leitor uma compreensão profunda do mundo em que vive. Cada conteúdo publicado aqui é desenvolvido a partir de cruzamento de múltiplas fontes nacionais e internacionais, análise de contexto histórico, leitura estratégica dos interesses envolvidos e avaliação das possíveis consequências de cada movimento no tabuleiro global. Não nos limitamos a relatar fatos; buscamos explicar por que eles acontecem, quem ganha, quem perde e o que isso significa para o futuro.</p>
-        <p>Nosso trabalho se apoia em três pilares fundamentais: credibilidade, independência e profundidade. Não seguimos agendas políticas, não defendemos governos ou ideologias e não operamos sob influência de grupos econômicos ou institucionais. Nosso compromisso é com o leitor, com a informação bem apurada e com a análise responsável.</p>
-        <p>O Geopolítica Estratégica foi criado para quem deseja enxergar além do noticiário superficial. Para quem entende que compreender a geopolítica é compreender o funcionamento real do poder no mundo. Para quem quer tomar decisões mais conscientes, seja como cidadão, profissional, investidor ou simplesmente como alguém que se recusa a aceitar explicações rasas sobre acontecimentos complexos.</p>
-        <p>O mundo está mudando rápido. As disputas estão mais intensas, os riscos maiores e as decisões cada vez mais estratégicas. O Geopolítica Estratégica existe para ajudar você a entender esse novo mundo antes que ele chegue.</p>
-      </div>
-    </div>
-  </div>
-
-  <div id="mvvModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content" role="dialog" aria-modal="true" aria-labelledby="mvvModalTitle">
-      <button class="modal-close" data-close-modal="mvvModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="mvvModalTitle" class="modal-title">Nossa Missão, Visão &amp; Valores</h2>
-      <div class="modal-body">
-        <h3 class="modal-subtitle">Missão</h3>
-        <p>Levar ao público informação geopolítica de alta qualidade, com análise profunda, linguagem clara e responsabilidade editorial, ajudando pessoas a compreenderem o funcionamento real do mundo, desenvolverem senso crítico e tomarem decisões mais conscientes em um cenário global cada vez mais complexo e desafiador.</p>
-
-        <h3 class="modal-subtitle">Visão</h3>
-        <p>Tornar o Geopolítica Estratégica uma das principais referências em análise geopolítica no Brasil, reconhecida pela credibilidade, independência e capacidade de traduzir acontecimentos globais em conhecimento acessível, estratégico e relevante para a sociedade.</p>
-
-        <h3 class="modal-subtitle">Valores</h3>
-        <p><strong>Profundidade analítica:</strong> busca constante por contextualização histórica, leitura estratégica e compreensão ampla dos fenômenos globais.</p>
-        <p><strong>Responsabilidade social:</strong> consciência do impacto da informação na formação de opinião e na construção de uma sociedade mais crítica e preparada.</p>
-        <p><strong>Compromisso com a excelência:</strong> evolução contínua, inovação e dedicação em oferecer sempre o melhor conteúdo possível.</p>
-        <p><strong>Transparência:</strong> clareza na comunicação, honestidade intelectual e respeito ao público.</p>
-      </div>
-    </div>
-  </div>
-
-  <div id="partnerModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content" role="dialog" aria-modal="true" aria-labelledby="partnerModalTitle">
-      <button class="modal-close" data-close-modal="partnerModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="partnerModalTitle" class="modal-title">Parceria</h2>
-      <div class="modal-body">
-        <p>Preencha os dados abaixo e envie sua mensagem. Vamos responder assim que possível.</p>
-
-        <form id="partnershipForm" class="form" novalidate>
-          <div class="form-grid">
-            <div class="form-field">
-              <label for="partnerName">Nome</label>
-              <input id="partnerName" name="partnerName" type="text" required placeholder="Seu nome">
-            </div>
-            <div class="form-field">
-              <label for="partnerSurname">Sobrenome</label>
-              <input id="partnerSurname" name="partnerSurname" type="text" required placeholder="Seu sobrenome">
-            </div>
-            <div class="form-field form-field-wide">
-              <label for="partnerEmail">E-mail</label>
-              <input id="partnerEmail" name="partnerEmail" type="email" required placeholder="seuemail@dominio.com">
-              <small class="form-hint">Não aceitamos e-mail em formato inválido.</small>
-            </div>
-            <div class="form-field form-field-wide">
-              <label for="partnerMessage">Mensagem</label>
-              <textarea id="partnerMessage" name="partnerMessage" rows="5" required placeholder="Escreva sua mensagem..."></textarea>
-            </div>
-          </div>
-
-          <div class="form-actions">
-            <button type="submit" class="btn-primary">Enviar</button>
-            <button type="button" class="btn-secondary modal-close-generic" data-close-modal="partnerModal">Fechar</button>
-          </div>
-
-          <div id="partnerFormFeedback" class="form-feedback" aria-live="polite"></div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <div id="contactModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
-      <button class="modal-close" data-close-modal="contactModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="contactModalTitle" class="modal-title">Entre em contato conosco</h2>
-      <div class="modal-body">
-        <p>Nosso e-mail:</p>
-        <p><a class="footer-link footer-email" href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a></p>
-      </div>
-    </div>
-  </div>
-
-
-
-    <div id="termsModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content spaced-modal" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle">
-      <button class="modal-close" data-close-modal="termsModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="termsModalTitle" class="modal-title">Termos de Uso | Geopolítica Estratégica</h2>
-      <div class="modal-body">
-        <p>Ao acessar e utilizar o site Geopolítica Estratégica, o visitante concorda com estes Termos de Uso. Caso não concorde, recomenda-se interromper a navegação.</p>
-        <p>O conteúdo publicado tem finalidade informativa e educacional. Embora adotemos esforços razoáveis para manter informações atualizadas e corretas, não garantimos a ausência de erros, omissões ou indisponibilidades. O uso das informações é de responsabilidade do usuário.</p>
-        <p>Todo o conteúdo do site, incluindo textos, identidade visual, logotipos e elementos gráficos, é protegido por direitos autorais e outras normas aplicáveis. É permitido compartilhar links e trechos curtos, com crédito e indicação de fonte. A reprodução integral, a cópia sistemática, a raspagem automática de conteúdo, a republicação e o uso comercial sem autorização prévia são proibidos.</p>
-        <p>O site pode conter links para páginas de terceiros. Não controlamos esses sites e não nos responsabilizamos por conteúdos, políticas ou práticas externas.</p>
-        <p>O Geopolítica Estratégica poderá, a qualquer momento, atualizar estes Termos para refletir melhorias, mudanças legais ou operacionais. A versão vigente é a disponível nesta página.</p>
-        <p>Para contato sobre estes Termos, utilize: <a href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a>.</p>
-      </div>
-    </div>
-  </div>
-
-    <div id="privacyModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content spaced-modal" role="dialog" aria-modal="true" aria-labelledby="privacyModalTitle">
-      <button class="modal-close" data-close-modal="privacyModal" aria-label="Fechar">×</button>
-      <div class="modal-logo-strip">
-        <div class="modal-logo-block">
-          <img src="logo.png" alt="Geopolítica Estratégica" class="logo-image">
-          <div class="logo-text-block">
-            <h1>GEOPOLÍTICA</h1>
-            <h2>ESTRATÉGICA</h2>
-          </div>
-        </div>
-      </div>
-      <h2 id="privacyModalTitle" class="modal-title">Política de Privacidade | Geopolítica Estratégica</h2>
-      <div class="modal-body">
-        <p>Esta Política de Privacidade explica como o Geopolítica Estratégica trata dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD). Ao utilizar o site, o visitante reconhece as práticas descritas abaixo.</p>
-
-        <p><strong>Quais dados podem ser coletados</strong></p>
-        <p>Podemos coletar dados fornecidos diretamente pelo usuário (por exemplo, nome, e-mail e mensagem em formulários) e dados coletados automaticamente durante a navegação (por exemplo, endereço IP, identificadores de cookies, páginas acessadas, tempo de permanência, dispositivo e navegador).</p>
-
-        <p><strong>Finalidades do uso</strong></p>
-        <p>Os dados podem ser utilizados para responder contatos, melhorar o funcionamento do site, gerar estatísticas de audiência (Google Analytics) e, quando habilitado, personalizar e medir anúncios (Google AdSense e tecnologias semelhantes), sempre conforme a preferência de cookies escolhida pelo usuário.</p>
-
-        <p><strong>Cookies e tecnologias similares</strong></p>
-        <p>Utilizamos cookies essenciais para funcionamento do site. Cookies de análise (Google Analytics) e de publicidade (Google AdSense) só devem ser ativados quando o usuário optar por aceitar cookies não essenciais. O usuário pode alterar sua preferência a qualquer momento pelo painel de cookies disponível no site.</p>
-
-        <p><strong>Compartilhamento com terceiros</strong></p>
-        <p>Podemos compartilhar dados com fornecedores que nos auxiliam a operar o site e medir desempenho, como Google (Analytics/AdSense). Esses serviços podem tratar informações conforme suas próprias políticas. Não vendemos dados pessoais.</p>
-
-        <p><strong>Segurança e retenção</strong></p>
-        <p>Adotamos medidas razoáveis de segurança para proteger informações. Mantemos dados apenas pelo tempo necessário para cumprir as finalidades descritas, obrigações legais e exercício regular de direitos.</p>
-
-        <p><strong>Direitos do titular</strong></p>
-        <p>O usuário pode solicitar confirmação de tratamento, acesso, correção, exclusão, portabilidade e informações sobre compartilhamento, conforme a LGPD, observadas as hipóteses legais de retenção.</p>
-
-        <p><strong>Contato</strong></p>
-        <p>Para solicitações relacionadas à privacidade, utilize: <a href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a>.</p>
-
-        <p><strong>Atualizações</strong></p>
-        <p>Podemos atualizar esta Política periodicamente. A versão vigente é a publicada nesta página.</p>
-      </div>
-    </div>
-  </div>
-
-    <div id="cookieModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content info-modal-content cookie-modal-content" role="dialog" aria-modal="true" aria-labelledby="cookieModalTitle">
+<div class="modal hidden" id="indicatorModal">
+<div class="modal-content indicator-modal-content">
+<button aria-label="Fechar" class="modal-close" id="closeIndicatorModal">×</button>
+<!-- Blue strip with logo at the top -->
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<div class="indicator-modal-body">
+<h2 class="indicator-title" id="indicatorTitle"></h2>
+<h3 class="modal-section-title">O que é</h3>
+<p class="indicator-description" id="indicatorDescription"></p>
+<h3 class="modal-section-title">Por que importa</h3>
+<p class="indicator-importance" id="indicatorImportance"></p>
+<h3 class="modal-section-title">Impacto atual</h3>
+<p class="indicator-impact" id="indicatorImpact"></p>
+</div>
+</div>
+</div>
+<!-- Optional JavaScript for interactive features -->
+<!-- Append a version query to force browsers to reload updated scripts -->
+<!-- Update version to force cache refresh -->
+<script src="script.js?v=15"></script>
+<!-- Institutional modals -->
+<div aria-hidden="true" class="modal hidden" id="aboutModal">
+<div aria-labelledby="aboutModalTitle" aria-modal="true" class="modal-content info-modal-content" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="aboutModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="aboutModalTitle">Sobre Nós | Geopolítica Estratégica</h2>
+<div class="modal-body">
+<p>O Geopolítica Estratégica nasceu da necessidade de entender o mundo para além das manchetes. Em um cenário global cada vez mais instável, marcado por conflitos armados, disputas de poder, crises econômicas e transformações políticas profundas, acreditamos que informação sem análise é apenas ruído. Nosso trabalho começa exatamente onde a maioria das notícias termina.</p>
+<p>Somos uma plataforma independente dedicada a acompanhar, interpretar e traduzir os principais acontecimentos da geopolítica mundial de forma clara, acessível e estrategicamente orientada. Nosso foco está nos grandes temas que moldam o presente e o futuro das nações: guerras, alianças militares, relações internacionais, economia global, segurança, tecnologia, energia e disputas por influência no sistema internacional.</p>
+<p>A proposta do Geopolítica Estratégica é simples e, ao mesmo tempo, ambiciosa: oferecer ao leitor uma compreensão profunda do mundo em que vive. Cada conteúdo publicado aqui é desenvolvido a partir de cruzamento de múltiplas fontes nacionais e internacionais, análise de contexto histórico, leitura estratégica dos interesses envolvidos e avaliação das possíveis consequências de cada movimento no tabuleiro global. Não nos limitamos a relatar fatos; buscamos explicar por que eles acontecem, quem ganha, quem perde e o que isso significa para o futuro.</p>
+<p>Nosso trabalho se apoia em três pilares fundamentais: credibilidade, independência e profundidade. Não seguimos agendas políticas, não defendemos governos ou ideologias e não operamos sob influência de grupos econômicos ou institucionais. Nosso compromisso é com o leitor, com a informação bem apurada e com a análise responsável.</p>
+<p>O Geopolítica Estratégica foi criado para quem deseja enxergar além do noticiário superficial. Para quem entende que compreender a geopolítica é compreender o funcionamento real do poder no mundo. Para quem quer tomar decisões mais conscientes, seja como cidadão, profissional, investidor ou simplesmente como alguém que se recusa a aceitar explicações rasas sobre acontecimentos complexos.</p>
+<p>O mundo está mudando rápido. As disputas estão mais intensas, os riscos maiores e as decisões cada vez mais estratégicas. O Geopolítica Estratégica existe para ajudar você a entender esse novo mundo antes que ele chegue.</p>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="mvvModal">
+<div aria-labelledby="mvvModalTitle" aria-modal="true" class="modal-content info-modal-content" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="mvvModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="mvvModalTitle">Nossa Missão, Visão &amp; Valores</h2>
+<div class="modal-body">
+<h3 class="modal-subtitle">Missão</h3>
+<p>Levar ao público informação geopolítica de alta qualidade, com análise profunda, linguagem clara e responsabilidade editorial, ajudando pessoas a compreenderem o funcionamento real do mundo, desenvolverem senso crítico e tomarem decisões mais conscientes em um cenário global cada vez mais complexo e desafiador.</p>
+<h3 class="modal-subtitle">Visão</h3>
+<p>Tornar o Geopolítica Estratégica uma das principais referências em análise geopolítica no Brasil, reconhecida pela credibilidade, independência e capacidade de traduzir acontecimentos globais em conhecimento acessível, estratégico e relevante para a sociedade.</p>
+<h3 class="modal-subtitle">Valores</h3>
+<p><strong>Profundidade analítica:</strong> busca constante por contextualização histórica, leitura estratégica e compreensão ampla dos fenômenos globais.</p>
+<p><strong>Responsabilidade social:</strong> consciência do impacto da informação na formação de opinião e na construção de uma sociedade mais crítica e preparada.</p>
+<p><strong>Compromisso com a excelência:</strong> evolução contínua, inovação e dedicação em oferecer sempre o melhor conteúdo possível.</p>
+<p><strong>Transparência:</strong> clareza na comunicação, honestidade intelectual e respeito ao público.</p>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="partnerModal">
+<div aria-labelledby="partnerModalTitle" aria-modal="true" class="modal-content info-modal-content" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="partnerModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="partnerModalTitle">Parceria</h2>
+<div class="modal-body">
+<p>Preencha os dados abaixo e envie sua mensagem. Vamos responder assim que possível.</p>
+<form class="form" id="partnershipForm" novalidate="">
+<div class="form-grid">
+<div class="form-field">
+<label for="partnerName">Nome</label>
+<input id="partnerName" name="partnerName" placeholder="Seu nome" required="" type="text"/>
+</div>
+<div class="form-field">
+<label for="partnerSurname">Sobrenome</label>
+<input id="partnerSurname" name="partnerSurname" placeholder="Seu sobrenome" required="" type="text"/>
+</div>
+<div class="form-field form-field-wide">
+<label for="partnerEmail">E-mail</label>
+<input id="partnerEmail" name="partnerEmail" placeholder="seuemail@dominio.com" required="" type="email"/>
+<small class="form-hint">Não aceitamos e-mail em formato inválido.</small>
+</div>
+<div class="form-field form-field-wide">
+<label for="partnerMessage">Mensagem</label>
+<textarea id="partnerMessage" name="partnerMessage" placeholder="Escreva sua mensagem..." required="" rows="5"></textarea>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-primary" type="submit">Enviar</button>
+<button class="btn-secondary modal-close-generic" data-close-modal="partnerModal" type="button">Fechar</button>
+</div>
+<div aria-live="polite" class="form-feedback" id="partnerFormFeedback"></div>
+</form>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="contactModal">
+<div aria-labelledby="contactModalTitle" aria-modal="true" class="modal-content info-modal-content" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="contactModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="contactModalTitle">Entre em contato conosco</h2>
+<div class="modal-body">
+<p>Nosso e-mail:</p>
+<p><a class="footer-link footer-email" href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a></p>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="termsModal">
+<div aria-labelledby="termsModalTitle" aria-modal="true" class="modal-content info-modal-content spaced-modal" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="termsModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="termsModalTitle">Termos de Uso | Geopolítica Estratégica</h2>
+<div class="modal-body">
+<p>Ao acessar e utilizar o site Geopolítica Estratégica, o visitante concorda com estes Termos de Uso. Caso não concorde, recomenda-se interromper a navegação.</p>
+<p>O conteúdo publicado tem finalidade informativa e educacional. Embora adotemos esforços razoáveis para manter informações atualizadas e corretas, não garantimos a ausência de erros, omissões ou indisponibilidades. O uso das informações é de responsabilidade do usuário.</p>
+<p>Todo o conteúdo do site, incluindo textos, identidade visual, logotipos e elementos gráficos, é protegido por direitos autorais e outras normas aplicáveis. É permitido compartilhar links e trechos curtos, com crédito e indicação de fonte. A reprodução integral, a cópia sistemática, a raspagem automática de conteúdo, a republicação e o uso comercial sem autorização prévia são proibidos.</p>
+<p>O site pode conter links para páginas de terceiros. Não controlamos esses sites e não nos responsabilizamos por conteúdos, políticas ou práticas externas.</p>
+<p>O Geopolítica Estratégica poderá, a qualquer momento, atualizar estes Termos para refletir melhorias, mudanças legais ou operacionais. A versão vigente é a disponível nesta página.</p>
+<p>Para contato sobre estes Termos, utilize: <a href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a>.</p>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="privacyModal">
+<div aria-labelledby="privacyModalTitle" aria-modal="true" class="modal-content info-modal-content spaced-modal" role="dialog">
+<button aria-label="Fechar" class="modal-close" data-close-modal="privacyModal">×</button>
+<div class="modal-logo-strip">
+<div class="modal-logo-block">
+<img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
+<div class="logo-text-block">
+<h1>GEOPOLÍTICA</h1>
+<h2>ESTRATÉGICA</h2>
+</div>
+</div>
+</div>
+<h2 class="modal-title" id="privacyModalTitle">Política de Privacidade | Geopolítica Estratégica</h2>
+<div class="modal-body">
+<p>Esta Política de Privacidade explica como o Geopolítica Estratégica trata dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD). Ao utilizar o site, o visitante reconhece as práticas descritas abaixo.</p>
+<p><strong>Quais dados podem ser coletados</strong></p>
+<p>Podemos coletar dados fornecidos diretamente pelo usuário (por exemplo, nome, e-mail e mensagem em formulários) e dados coletados automaticamente durante a navegação (por exemplo, endereço IP, identificadores de cookies, páginas acessadas, tempo de permanência, dispositivo e navegador).</p>
+<p><strong>Finalidades do uso</strong></p>
+<p>Os dados podem ser utilizados para responder contatos, melhorar o funcionamento do site, gerar estatísticas de audiência (Google Analytics) e, quando habilitado, personalizar e medir anúncios (Google AdSense e tecnologias semelhantes), sempre conforme a preferência de cookies escolhida pelo usuário.</p>
+<p><strong>Cookies e tecnologias similares</strong></p>
+<p>Utilizamos cookies essenciais para funcionamento do site. Cookies de análise (Google Analytics) e de publicidade (Google AdSense) só devem ser ativados quando o usuário optar por aceitar cookies não essenciais. O usuário pode alterar sua preferência a qualquer momento pelo painel de cookies disponível no site.</p>
+<p><strong>Compartilhamento com terceiros</strong></p>
+<p>Podemos compartilhar dados com fornecedores que nos auxiliam a operar o site e medir desempenho, como Google (Analytics/AdSense). Esses serviços podem tratar informações conforme suas próprias políticas. Não vendemos dados pessoais.</p>
+<p><strong>Segurança e retenção</strong></p>
+<p>Adotamos medidas razoáveis de segurança para proteger informações. Mantemos dados apenas pelo tempo necessário para cumprir as finalidades descritas, obrigações legais e exercício regular de direitos.</p>
+<p><strong>Direitos do titular</strong></p>
+<p>O usuário pode solicitar confirmação de tratamento, acesso, correção, exclusão, portabilidade e informações sobre compartilhamento, conforme a LGPD, observadas as hipóteses legais de retenção.</p>
+<p><strong>Contato</strong></p>
+<p>Para solicitações relacionadas à privacidade, utilize: <a href="mailto:geopoliticaestrategica@geopoliticaestrategica.com">geopoliticaestrategica@geopoliticaestrategica.com</a>.</p>
+<p><strong>Atualizações</strong></p>
+<p>Podemos atualizar esta Política periodicamente. A versão vigente é a publicada nesta página.</p>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal hidden" id="cookieModal">
+<div aria-labelledby="cookieModalTitle" aria-modal="true" class="modal-content info-modal-content cookie-modal-content" role="dialog">
 <div class="modal-logo-strip cookie-logo-strip">
-        <div class="cookie-header">
-          <h2 id="cookieModalTitle" class="cookie-title">Uso de Cookies</h2>
-          <p class="cookie-subtitle">Utilizamos cookies para melhorar sua experiência, entender como o site é usado e, quando permitido, exibir anúncios relevantes.</p>
-        </div>
-      </div>
+<div class="cookie-header">
+<h2 class="cookie-title" id="cookieModalTitle">Uso de Cookies</h2>
+<p class="cookie-subtitle">Utilizamos cookies para melhorar sua experiência, entender como o site é usado e, quando permitido, exibir anúncios relevantes.</p>
+</div>
+</div>
+<div class="modal-body cookie-body">
+<p>Este site utiliza cookies e tecnologias similares para análise de tráfego (Google Analytics) e publicidade (Google AdSense). Ao selecionar “Aceitar todos”, você permite cookies não essenciais. Você também pode rejeitar cookies não essenciais e manter apenas os essenciais.</p>
+<p>Leia nossa <a class="cookie-privacy-link" data-open-privacy="1" href="#">Política de Privacidade</a> para mais detalhes.</p>
+<button aria-controls="cookieDetails" aria-expanded="false" class="cookie-toggle" type="button">
+<span class="cookie-toggle-text">Mostrar detalhes</span>
+<span class="cookie-toggle-icon">▾</span>
+</button>
+<div aria-hidden="true" class="cookie-details hidden" id="cookieDetails">
+<div class="cookie-item">
+<div class="cookie-item-title">Cookies Essenciais</div>
+<div class="cookie-item-desc">Necessários para o funcionamento básico do site e recursos como navegação e segurança. Não podem ser desativados.</div>
+</div>
+<div class="cookie-item">
+<div class="cookie-item-title">Cookies de Análise (Google Analytics)</div>
+<div class="cookie-item-desc">Nos ajudam a entender como os visitantes interagem com o site, coletando informações de forma agregada.</div>
+</div>
+<div class="cookie-item">
+<div class="cookie-item-title">Cookies de Publicidade (Google AdSense)</div>
+<div class="cookie-item-desc">Usados para exibir anúncios relevantes e medir a eficácia de campanhas publicitárias.</div>
+</div>
+</div>
+<div class="cookie-actions">
+<button class="btn-secondary cookie-btn cookie-btn-reject" data-cookie-choice="essential" type="button">Rejeitar não essenciais</button>
+<button class="cookie-btn cookie-btn-accept" data-cookie-choice="all" type="button">Aceitar todos</button>
+</div>
+</div>
+</div>
+</div>
 
-      <div class="modal-body cookie-body">
-        <p>Este site utiliza cookies e tecnologias similares para análise de tráfego (Google Analytics) e publicidade (Google AdSense). Ao selecionar “Aceitar todos”, você permite cookies não essenciais. Você também pode rejeitar cookies não essenciais e manter apenas os essenciais.</p>
-        <p>Leia nossa <a href="#" class="cookie-privacy-link" data-open-privacy="1">Política de Privacidade</a> para mais detalhes.</p>
-
-        <button type="button" class="cookie-toggle" aria-expanded="false" aria-controls="cookieDetails">
-          <span class="cookie-toggle-text">Mostrar detalhes</span>
-          <span class="cookie-toggle-icon">▾</span>
-        </button>
-
-        <div id="cookieDetails" class="cookie-details hidden" aria-hidden="true">
-          <div class="cookie-item">
-            <div class="cookie-item-title">Cookies Essenciais</div>
-            <div class="cookie-item-desc">Necessários para o funcionamento básico do site e recursos como navegação e segurança. Não podem ser desativados.</div>
-          </div>
-          <div class="cookie-item">
-            <div class="cookie-item-title">Cookies de Análise (Google Analytics)</div>
-            <div class="cookie-item-desc">Nos ajudam a entender como os visitantes interagem com o site, coletando informações de forma agregada.</div>
-          </div>
-          <div class="cookie-item">
-            <div class="cookie-item-title">Cookies de Publicidade (Google AdSense)</div>
-            <div class="cookie-item-desc">Usados para exibir anúncios relevantes e medir a eficácia de campanhas publicitárias.</div>
-          </div>
-        </div>
-
-        <div class="cookie-actions">
-          <button type="button" class="btn-secondary cookie-btn cookie-btn-reject" data-cookie-choice="essential">Rejeitar não essenciais</button>
-          <button type="button" class="cookie-btn cookie-btn-accept" data-cookie-choice="all">Aceitar todos</button>
-        </div>
-      </div>
+  <!-- Cookie consent (mobile) -->
+  <div class="cookie-consent mobile-only" id="cookieConsent" aria-live="polite">
+    <div class="cookie-title">Cookies</div>
+    <p class="cookie-text">Usamos cookies para melhorar sua experiência. Você pode aceitar ou rejeitar.</p>
+    <div class="cookie-actions">
+      <button class="cookie-btn reject" id="cookieRejectBtn" type="button">Rejeitar</button>
+      <button class="cookie-btn accept" id="cookieAcceptBtn" type="button">Aceitar</button>
     </div>
   </div>
 

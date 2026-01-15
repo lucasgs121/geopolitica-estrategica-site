@@ -6,6 +6,23 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // MOBILE: garante que o ticker (menu + breaking) fique sempre colado logo abaixo do header
+  // (evita sobreposição quando o header é sticky)
+  const updateMobileHeaderHeightVar = () => {
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    if (!isMobile) return;
+    const header = document.querySelector('.header');
+    if (!header) return;
+    const h = Math.round(header.getBoundingClientRect().height);
+    if (h > 0) {
+      document.documentElement.style.setProperty('--ge-header-h', `${h}px`);
+    }
+  };
+  updateMobileHeaderHeightVar();
+  window.addEventListener('resize', updateMobileHeaderHeightVar, { passive: true });
+  window.addEventListener('orientationchange', updateMobileHeaderHeightVar, { passive: true });
+
   // Atualiza a data no cabeçalho a cada minuto
   const dateSpan = document.querySelector('.date-text');
   function updateDate() {
@@ -22,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----- Mobile menu (off-canvas) -----
   const mobileMenuBtn = document.getElementById('mobileMenuBtn');
   const mobileMenuBtnRow2 = document.getElementById('mobileMenuBtnRow2');
+  // Some layouts use a dedicated breaking-line menu button
+  const mobileMenuBtnBreaking = document.getElementById('mobileMenuBtnBreaking');
   const navCloseBtn = document.getElementById('navCloseBtn');
   const navOverlay = document.getElementById('navOverlay');
   const mainNav = document.getElementById('mainNav');
@@ -30,18 +49,98 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('nav-open');
     if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','true');
     if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','true');
+    if (mobileMenuBtnBreaking) mobileMenuBtnBreaking.setAttribute('aria-expanded','true');
   }
   function geCloseNav(){
     document.body.classList.remove('nav-open');
     if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','false');
     if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','false');
+    if (mobileMenuBtnBreaking) mobileMenuBtnBreaking.setAttribute('aria-expanded','false');
   }
 
   if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', geOpenNav);
   if (mobileMenuBtnRow2) mobileMenuBtnRow2.addEventListener('click', geOpenNav);
+  if (mobileMenuBtnBreaking) mobileMenuBtnBreaking.addEventListener('click', geOpenNav);
   if (navCloseBtn) navCloseBtn.addEventListener('click', geCloseNav);
   if (navOverlay) navOverlay.addEventListener('click', geCloseNav);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') geCloseNav(); });
+
+
+  // ----- Mobile swipe to close (drag from left to right) -----
+  // Only active when the off-canvas menu is open and screen is in mobile range.
+  if (mainNav){
+    let geTouchStartX = 0;
+    let geTouchStartY = 0;
+    const geIsMobile = () => window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    const geNavIsOpen = () => document.body.classList.contains('nav-open');
+
+    mainNav.addEventListener('touchstart', (e) => {
+      if (!geIsMobile() || !geNavIsOpen()) return;
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      geTouchStartX = t.clientX;
+      geTouchStartY = t.clientY;
+    }, { passive: true });
+
+    mainNav.addEventListener('touchend', (e) => {
+      if (!geIsMobile() || !geNavIsOpen()) return;
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - geTouchStartX;
+      const dy = t.clientY - geTouchStartY;
+
+      // Close on a clear swipe right gesture
+      if (dx > 70 && Math.abs(dx) > Math.abs(dy) * 1.4){
+        geCloseNav();
+      }
+    }, { passive: true });
+
+
+  // ----- Mobile swipe to open (drag from right to left) -----
+  // Active when the menu is CLOSED. Start gesture near the right edge to avoid conflicts.
+  (function(){
+    let startX = 0;
+    let startY = 0;
+    const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    const navIsOpen = () => document.body.classList.contains('nav-open');
+    const isInteractiveEl = (el) => {
+      if (!el) return false;
+      const tag = (el.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || el.isContentEditable;
+    };
+
+    document.addEventListener('touchstart', (e) => {
+      if (!isMobile() || navIsOpen()) return;
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+
+      // Only begin if the touch starts close to the right edge
+      const edge = Math.max(20, Math.min(36, window.innerWidth * 0.08));
+      if (t.clientX < window.innerWidth - edge) return;
+
+      // Avoid opening while interacting with inputs/buttons
+      if (isInteractiveEl(e.target)) return;
+
+      startX = t.clientX;
+      startY = t.clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      if (!isMobile() || navIsOpen()) return;
+      const t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // Open on a clear swipe LEFT gesture
+      if (dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.4){
+        geOpenNav();
+      }
+    }, { passive: true });
+  })();
+
+  }
 
   setInterval(updateDate, 60000);
 
@@ -413,14 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const categoryItems = document.querySelectorAll('.categories .category');
   categoryItems.forEach(cat => {
     cat.addEventListener('click', (e) => {
-      const isMobile = window.innerWidth <= 820;
-      const hasSub = cat.classList.contains('has-submenu');
-
-      // Em mobile, categorias com submenu funcionam como "accordion"
-      if (isMobile && hasSub) {
-        cat.classList.toggle('open');
-        e.preventDefault();
-      }
+      const isMobile = window.innerWidth <= 900;
 
       const selectedCategory = cat.dataset.category;
 
@@ -432,8 +524,8 @@ document.addEventListener('DOMContentLoaded', () => {
       filters.subcategory = null;
       applyFilters();
 
-      // Em mobile, se não houver submenu, fecha o menu após selecionar
-      if (isMobile && !hasSub) {
+      // Em mobile, sempre fecha o menu após selecionar (menu simples)
+      if (isMobile) {
         try { geCloseNav(); } catch (err) {}
       }
     });
@@ -454,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
       categoryItems.forEach(c => c.classList.remove('active'));
       parent.classList.add('active');
       applyFilters();
-      if (window.innerWidth <= 820) { try { geCloseNav(); } catch (err) {} }
+      if (window.innerWidth <= 900) { try { geCloseNav(); } catch (err) {} }
     });
   });
 
@@ -1191,7 +1283,13 @@ document.addEventListener('DOMContentLoaded', () => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const id = link.getAttribute('data-modal');
-      if (id) openGenericModal(id);
+      if (id) {
+        // No mobile, fecha o drawer antes de abrir o modal
+        if (window.innerWidth <= 900) {
+          try { geCloseNav(); } catch (err) {}
+        }
+        openGenericModal(id);
+      }
     });
   });
 
@@ -1422,4 +1520,13 @@ function geLoadScriptOnce(src, attrs = {}) {
 
 // Inicialização
   initMarkets();
+
+  /* -------------------------------------------------------------- */
+  /* -------------------------------------------------------------- */
+/* Cookies (mobile): usamos o MESMO modal do desktop               */
+/* -------------------------------------------------------------- */
+/* O banner simplificado #cookieConsent foi desativado no CSS para evitar duplicidade.
+   Mantemos apenas o fluxo do modal #cookieModal (com links e detalhes), que já funciona
+   em todos os tamanhos de tela. */
+
 });
