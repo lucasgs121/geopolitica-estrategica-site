@@ -10,6 +10,27 @@
 <!-- Bump the version query whenever CSS/JS changes to force the browser to reload the latest file -->
 <!-- Update version to force cache refresh -->
 <link href="style.css?v=26" rel="stylesheet"/>
+
+<!-- OneSignal Web Push (v16) -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "658d8831-323c-42fe-b502-920d9c8d6d4e",
+    });
+
+    // Mostra o prompt de inscrição automaticamente (sem precisar de botão).
+    // O navegador só pede permissão depois que o usuário clicar em "Permitir".
+    try {
+      if (OneSignal?.Slidedown?.promptPush) {
+        OneSignal.Slidedown.promptPush();
+      }
+    } catch (e) {
+      // silencioso
+    }
+  });
+</script>
 </head>
 <body>
 <!-- Primary header: logo, status/date and login -->
