@@ -45,14 +45,44 @@ document.addEventListener('DOMContentLoaded', () => {
   const navOverlay = document.getElementById('navOverlay');
   const mainNav = document.getElementById('mainNav');
 
+  // Scroll lock (MOBILE): trava o scroll do conteudo (noticias) quando o drawer estiver aberto
+  let geScrollLockY = 0;
+  let geBodyScrollLocked = false;
+
+  function geLockBodyScroll(){
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    if (!isMobile || geBodyScrollLocked) return;
+    geScrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${geScrollLockY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    geBodyScrollLocked = true;
+  }
+
+  function geUnlockBodyScroll(){
+    if (!geBodyScrollLocked) return;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, geScrollLockY);
+    geBodyScrollLocked = false;
+  }
+
   function geOpenNav(){
     document.body.classList.add('nav-open');
+    // no mobile, trava o fundo para o scroll ficar apenas no menu
+    geLockBodyScroll();
     if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','true');
     if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','true');
     if (mobileMenuBtnBreaking) mobileMenuBtnBreaking.setAttribute('aria-expanded','true');
   }
   function geCloseNav(){
     document.body.classList.remove('nav-open');
+    geUnlockBodyScroll();
     if (mobileMenuBtn) mobileMenuBtn.setAttribute('aria-expanded','false');
     if (mobileMenuBtnRow2) mobileMenuBtnRow2.setAttribute('aria-expanded','false');
     if (mobileMenuBtnBreaking) mobileMenuBtnBreaking.setAttribute('aria-expanded','false');
@@ -101,8 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
   (function(){
     let startX = 0;
     let startY = 0;
+    let startTime = 0;
+
     const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
     const navIsOpen = () => document.body.classList.contains('nav-open');
+
     const isInteractiveEl = (el) => {
       if (!el) return false;
       const tag = (el.tagName || '').toLowerCase();
@@ -111,32 +144,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('touchstart', (e) => {
       if (!isMobile() || navIsOpen()) return;
+
       const t = e.touches && e.touches[0];
       if (!t) return;
 
-      // Only begin if the touch starts close to the right edge
-      const edge = Math.max(20, Math.min(36, window.innerWidth * 0.08));
-      if (t.clientX < window.innerWidth - edge) return;
+      // Only begin if the touch starts VERY close to the right edge (anti-scroll false positives)
+      const EDGE_PX = 70;
+      if (t.clientX < window.innerWidth - EDGE_PX) return;
 
       // Avoid opening while interacting with inputs/buttons
       if (isInteractiveEl(e.target)) return;
 
       startX = t.clientX;
       startY = t.clientY;
+      startTime = Date.now();
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
       if (!isMobile() || navIsOpen()) return;
+
       const t = e.changedTouches && e.changedTouches[0];
       if (!t) return;
 
       const dx = t.clientX - startX;
       const dy = t.clientY - startY;
 
-      // Open on a clear swipe LEFT gesture
-      if (dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.4){
-        geOpenNav();
-      }
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      // Strong anti-scroll protection: if the gesture is mostly vertical, ignore it
+      const MAX_VERTICAL_DRIFT = 60;
+      if (absDy > MAX_VERTICAL_DRIFT) return;
+
+      // Must be clearly horizontal
+      const HORIZONTAL_DOMINANCE = 1.2;
+      if (absDx < absDy * HORIZONTAL_DOMINANCE) return;
+
+      // Distance threshold (swipe LEFT)
+      const MIN_SWIPE = 35;
+      if (dx > -MIN_SWIPE) return;
+
+      // Optional time limit (prevents slow drags triggering the menu)
+      const dt = Date.now() - startTime;
+      const MAX_TIME_MS = 1200;
+      if (dt > MAX_TIME_MS) return;
+
+      geOpenNav();
     }, { passive: true });
   })();
 
