@@ -11,6 +11,55 @@
 
 .mobile-only{display:none;}
 
+/* =====================================================
+   COOKIES (MOBILE): usar o MESMO MODAL do desktop
+   Ajustes de responsividade e rolagem (iOS-friendly)
+   Colocado no final do arquivo para sempre prevalecer.
+   ===================================================== */
+
+@media (max-width: 900px){
+  /* Mantém o modal centralizado com margens e sem encostar nas bordas */
+  .modal-content.info-modal-content.cookie-modal-content,
+  .cookie-modal-content{
+    width: calc(100vw - 32px) !important;
+    max-width: 520px !important;
+    margin: 16px !important;
+    padding: 0 !important;
+
+    /* Evita ficar maior que a tela e garante rolagem interna */
+    max-height: 85vh !important;
+    max-height: 85dvh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Área de texto rola; ações ficam sempre acessíveis */
+  .cookie-body{
+    flex: 1 1 auto !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cookie-actions{
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #ffffff;
+    padding: 12px 1.1rem calc(12px + env(safe-area-inset-bottom));
+    margin-top: 0 !important;
+  }
+
+  .cookie-actions .cookie-btn{
+    width: 100% !important;
+  }
+
+  /* Garantia extra: não usar o banner simplificado no mobile */
+  #cookieConsent{ display: none !important; }
+}
+
 @media (max-width: 900px){
   .mobile-only{display:block;}
 
@@ -338,6 +387,27 @@ body {
   background-color: #0f172a;
   color: #cbd5e1;
   border-bottom: 2px solid #fbbf24;
+}
+
+/* Desktop: manter o menu de temas acompanhando o leitor ao rolar a página */
+@media (min-width: 901px) {
+  /* Linha 1 (logo + entrar) fixa no topo no DESKTOP */
+  .header{
+    position: sticky;
+    top: 0;
+    z-index: 1300;
+  }
+
+  .main-nav {
+    position: sticky;
+    /*
+      Fica colado logo abaixo do header (que tambem eh sticky).
+      Se o top for 0, o menu "gruda" por tras do header e parece que nao acompanha.
+      A variavel eh atualizada via JS para refletir a altura real do header.
+    */
+    top: var(--ge-header-h-desktop, 78px);
+    z-index: 1100;
+  }
 }
 
 /* Layout of navigation: categories centered with search to the right */

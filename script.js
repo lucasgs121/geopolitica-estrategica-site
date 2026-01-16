@@ -7,21 +7,58 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // MOBILE: garante que o ticker (menu + breaking) fique sempre colado logo abaixo do header
-  // (evita sobreposição quando o header é sticky)
-  const updateMobileHeaderHeightVar = () => {
+  // Desktop: after updating the feed via filters, return to the top reliably.
+  // Double requestAnimationFrame helps avoid landing mid-page if content height changes.
+  function geScrollToTopSafeDesktop() {
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+    if (isMobile) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      });
+    });
+  }
+
+  // Mobile: after selecting a category inside the off-canvas menu, return to the top
+  // so the user can immediately read the updated feed.
+  function geScrollToTopSafeMobile() {
     const isMobile = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
     if (!isMobile) return;
+
+    const doScroll = () => {
+      // Two RAFs help avoid landing mid-page if content height changes right after filtering.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        });
+      });
+      // Fallback: if something repositions the page right after, force a final snap.
+      setTimeout(() => {
+        if ((window.scrollY || document.documentElement.scrollTop || 0) > 4) {
+          window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+        }
+      }, 140);
+    };
+
+    doScroll();
+  }
+
+  // Atualiza variaveis CSS com a altura real do header.
+  // - MOBILE: --ge-header-h (offset do ticker)
+  // - DESKTOP: --ge-header-h-desktop (offset do menu sticky)
+  // Fazemos isso via JS para evitar "adivinhacao" de alturas e garantir que o sticky funcione.
+  const updateHeaderHeightVars = () => {
     const header = document.querySelector('.header');
     if (!header) return;
     const h = Math.round(header.getBoundingClientRect().height);
     if (h > 0) {
       document.documentElement.style.setProperty('--ge-header-h', `${h}px`);
+      document.documentElement.style.setProperty('--ge-header-h-desktop', `${h}px`);
     }
   };
-  updateMobileHeaderHeightVar();
-  window.addEventListener('resize', updateMobileHeaderHeightVar, { passive: true });
-  window.addEventListener('orientationchange', updateMobileHeaderHeightVar, { passive: true });
+  updateHeaderHeightVars();
+  window.addEventListener('resize', updateHeaderHeightVars, { passive: true });
+  window.addEventListener('orientationchange', updateHeaderHeightVars, { passive: true });
 
   // Atualiza a data no cabeçalho a cada minuto
   const dateSpan = document.querySelector('.date-text');
@@ -577,9 +614,15 @@ document.addEventListener('DOMContentLoaded', () => {
       filters.subcategory = null;
       applyFilters();
 
+      // Desktop: ao trocar o tema/categoria, volta ao topo para o leitor ver a "capa" atualizada.
+      if (!isMobile) {
+        geScrollToTopSafeDesktop();
+      }
+
       // Em mobile, sempre fecha o menu após selecionar (menu simples)
       if (isMobile) {
         try { geCloseNav(); } catch (err) {}
+        geScrollToTopSafeMobile();
       }
     });
   });
@@ -599,7 +642,15 @@ document.addEventListener('DOMContentLoaded', () => {
       categoryItems.forEach(c => c.classList.remove('active'));
       parent.classList.add('active');
       applyFilters();
-      if (window.innerWidth <= 900) { try { geCloseNav(); } catch (err) {} }
+
+      // Desktop: ao trocar subtema, volta ao topo para iniciar a leitura do feed atualizado.
+      if (window.innerWidth > 900) {
+        geScrollToTopSafeDesktop();
+      }
+      if (window.innerWidth <= 900) {
+        try { geCloseNav(); } catch (err) {}
+        geScrollToTopSafeMobile();
+      }
     });
   });
 
@@ -614,8 +665,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const navItem = document.querySelector(`.categories .category[data-category="${targetCategory}"]`);
       if (navItem) {
         navItem.click();
-        // Garante que o usuário seja levado ao topo do feed (comportamento natural de navegação)
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // No desktop, o próprio clique já leva ao topo (scroll seguro).
+        // Em mobile, mantém um scroll suave após a troca.
+        if (window.innerWidth <= 900) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       }
     });
   });
