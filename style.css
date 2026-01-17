@@ -464,6 +464,19 @@ body {
   justify-content: flex-start;
 }
 
+/* Desktop: force categories to start exactly at the container edge (align with BREAKING tag border) */
+@media (min-width: 901px){
+  .main-nav .categories-container{
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+  .main-nav .categories{
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+}
+
+
 /* Categories list */
 .categories {
   list-style: none;
@@ -575,7 +588,7 @@ body {
 
 /* Breaking ticker */
 .breaking {
-  background-color: #010409;
+  background-color: #0f172a;
   color: #f8fafc;
   /* Increase base font-size slightly to improve readability of the breaking bar */
   font-size: 0.875rem;
