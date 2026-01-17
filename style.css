@@ -213,6 +213,9 @@ body {
 /* Desktop vs Mobile visibility */
 .nav-search-wrap { display: flex; }
 @media (max-width: 900px) {
+  /* Mobile: show drawer topbar */
+  .nav-topbar{ display:flex; }
+
   .nav-search-wrap { display: none; }
 }
 
@@ -422,7 +425,7 @@ body {
 
 /* Drawer topbar (mobile): search + close button */
 .nav-topbar{
-  display:flex;
+  display:none;
   align-items:center;
   gap:10px;
   width:100%;
@@ -458,7 +461,7 @@ body {
 .categories-container{
   flex: 1;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /* Categories list */
@@ -542,7 +545,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  margin-left: 1rem;
+  margin-left: 0;
 }
 
 .nav-search input {
@@ -2115,6 +2118,9 @@ body.nav-open .nav-overlay{
   /* Drawer: safe zone padding and topbar search */
   .main-nav .nav-search:not(.drawer-search){ display:none; }
   .main-nav .drawer-search{ display:flex; }
+
+  /* Ensure the drawer topbar (search) is visible on mobile */
+  .nav-topbar{ display:flex; }
 
   .nav-close-btn{
     display:inline-flex;
