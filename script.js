@@ -1,7 +1,7 @@
 /*
  * Script responsável por tornar o site interativo e responsivo.
  * Ele popula o feed dinamicamente, aplica filtros conforme o usuário
- * seleciona categorias, regiões, temas, países, datas e pesquisa por palavras‑chave.
+ * seleciona categorias, regiões, temas, países, datas e pesquisa por palavras-chave.
  * Também mantém a data atualizada no topo e permite resetar filtros facilmente.
  */
 
@@ -234,105 +234,159 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setInterval(updateDate, 60000);
 
-  // Dados de notícias para o feed (mockado). Em um cenário real estes dados viriam de uma API.
-  // Cada item possui categoria e subcategoria para permitir filtragem pelo menu
-  const feedItems = [
-    {
-      id: 1,
-      category: 'CONFLITOS',
-      subcategory: 'israel-ira',
-      title: 'Tensão no Estreito de Ormuz: Irã anuncia novos exercícios navais',
-      excerpt: 'Análise estratégica urgente sobre o aumento de atividade naval e o impacto potencial em rotas de energia, preços e cálculo de risco no Golfo.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T14:06:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1520975958225-5f52f4f1b7f1?auto=format&fit=crop&w=1600&q=60',
-      urgent: true
-    },
-    {
-      id: 2,
-      category: 'ECON',
-      subcategory: 'comercio-global',
-      title: 'Europa reavalia cadeias de suprimento em meio a novos choques industriais',
-      excerpt: 'Governos ampliam incentivos e discutem segurança econômica, com efeitos diretos em energia, indústria e exportações.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T12:22:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },
-    {
-      id: 3,
-      category: 'GEO',
-      subcategory: 'diplomacia',
-      title: 'Washington ajusta postura regional e pressiona aliados por novos compromissos',
-      excerpt: 'O movimento abre espaço para reações de rivais e para uma nova rodada de disputas por influência no continente.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T10:05:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
+  // =========================
+  // FEED + BREAKING (API)
+  // =========================
+
+  // Dados de notícias do feed (AGORA VINDO DA API)
+  // Mantemos "let" porque vamos atualizar dinamicamente
+  let feedItems = [];
+
+  // Breaking: comportamento estilo portal
+  // - Mostra APENAS urgentes recentes (janela de validade)
+  // - Topo de no máximo 5 itens
+  // - Rotaciona automaticamente
+  const BREAKING_MAX_ITEMS = 5;
+  const BREAKING_ROTATE_MS = 8000;
+  const BREAKING_MAX_AGE_HOURS = 12;
+
+  const geBreakingState = {
+    items: [],
+    index: 0,
+    timer: null,
+    currentKey: null, // id/slug do item atual para tentar manter posição após refresh
+  };
+
+  function computeBreakingItemsFromFeed() {
+    const now = Date.now();
+    const maxAgeMs = BREAKING_MAX_AGE_HOURS * 60 * 60 * 1000;
+
+    return [...feedItems]
+      .filter(item => !!item.urgent)
+      .filter(item => {
+        const t = Date.parse(item.publishedAt || '');
+        if (!Number.isFinite(t)) return true; // se vier sem data válida, não bloqueia
+        return (now - t) <= maxAgeMs;
+      })
+      .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+      .slice(0, BREAKING_MAX_ITEMS);
+  }
+
+  async function loadFeedFromApi() {
+    try {
+      const res = await fetch(`/api/posts?ts=${Date.now()}`, { cache: 'no-store' });
+      const data = await res.json();
+
+      if (!data || !data.ok || !Array.isArray(data.posts)) {
+        console.warn('API /api/posts não retornou no formato esperado:', data);
+        return;
+      }
+
+      feedItems = data.posts.map((p, idx) => ({
+        id: p.id ?? (Date.now() + idx),
+        slug: p.slug,
+        url: p.url || (p.slug ? `/p/${p.slug}` : '#'),
+        category: p.category || 'GEO',
+        subcategory: p.subcategory || null,
+        title: p.title || 'Sem título',
+        excerpt: p.excerpt || p.summary || '',
+        author: p.author || 'Geopolítica Estratégica',
+        publishedAt: p.publishedAt || new Date().toISOString(),
+        imageUrl: p.imageUrl || '',
+        urgent: !!p.urgent
+      }));
+
+      renderFeed(feedItems);
+      updateMobileTicker();
+      setupBreakingFromFeed();
+
+    } catch (err) {
+      console.error('Erro ao carregar feed da API:', err);
     }
-    // Additional sample items to demonstrate pagination and highlights
-    ,{
-      id: 4,
-      category: 'DEFESA',
-      subcategory: 'movimentacoes-militares',
-      title: 'Forças armadas realizam grandes exercícios no Pacífico',
-      excerpt: 'Operação mobiliza centenas de aeronaves e navios em demonstração de poder militar.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T09:30:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1494412651409-8963f1304e80?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },{
-      id: 5,
-      category: 'CIBER',
-      subcategory: 'ciberataques',
-      title: 'Novo ataque cibernético compromete dados de empresas europeias',
-      excerpt: 'Especialistas alertam para aumento de incidentes e a necessidade de reforçar a segurança digital.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T08:15:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1556742043-f755b548aa35?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },{
-      id: 6,
-      category: 'ECON',
-      subcategory: 'impactos-guerra',
-      title: 'Mercados globais recuam com tensões no Oriente Médio',
-      excerpt: 'Preços do petróleo e do ouro sobem enquanto bolsas registram queda após novos confrontos.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-04T07:50:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },{
-      id: 7,
-      category: 'BRASIL',
-      subcategory: 'posicao-brasil',
-      title: 'Brasil assume papel de mediador em nova crise internacional',
-      excerpt: 'Diplomacia brasileira trabalha para acalmar tensões entre países rivais e busca consenso.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-03T18:40:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1486308510493-aa64833637dc?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },{
-      id: 8,
-      category: 'REGIOES',
-      subcategory: 'asia',
-      title: 'Conferência regional debate cooperação econômica na Ásia',
-      excerpt: 'Líderes discutem formas de integração e crescimento sustentável na região.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-03T16:10:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1498550744920-e9fc8f2a6457?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
-    },{
-      id: 9,
-      category: 'CONFLITOS',
-      subcategory: 'china-taiwan',
-      title: 'Tensão aumenta entre China e Taiwan após exercícios militares',
-      excerpt: 'Analistas veem riscos de escalada e monitoram movimentações de forças chinesas e taiwanesas.',
-      author: 'Geopolítica Estratégica',
-      publishedAt: '2026-01-03T14:05:00-03:00',
-      imageUrl: 'https://images.unsplash.com/photo-1508780709619-79562169bc64?auto=format&fit=crop&w=1600&q=60',
-      urgent: false
+  }
+
+  function setupBreakingFromFeed() {
+    const breakingTitleEl = document.querySelector('.breaking-title');
+    const prevBtn = document.querySelector('.breaking-prev');
+    const nextBtn = document.querySelector('.breaking-next');
+
+    if (!breakingTitleEl) return;
+
+    const breakingItems = computeBreakingItemsFromFeed();
+
+    // limpa timer antigo sempre que reconfigura
+    if (geBreakingState.timer) {
+      clearInterval(geBreakingState.timer);
+      geBreakingState.timer = null;
     }
-  ];
+
+    geBreakingState.items = breakingItems;
+
+    if (!breakingItems.length) {
+      breakingTitleEl.textContent = 'Sem notícias urgentes no momento';
+      breakingTitleEl.style.cursor = 'default';
+      breakingTitleEl.onclick = null;
+      geBreakingState.index = 0;
+      geBreakingState.currentKey = null;
+      return;
+    }
+
+    // tenta manter o item atual após refresh
+    const makeKey = (it) => (it.slug || it.id || it.title);
+    const prevKey = geBreakingState.currentKey;
+    let startIndex = 0;
+    if (prevKey) {
+      const idx = breakingItems.findIndex(it => makeKey(it) === prevKey);
+      if (idx >= 0) startIndex = idx;
+    }
+    geBreakingState.index = startIndex;
+
+    function renderBreaking() {
+      const item = geBreakingState.items[geBreakingState.index];
+      if (!item) return;
+
+      geBreakingState.currentKey = makeKey(item);
+      breakingTitleEl.textContent = item.title;
+
+      breakingTitleEl.style.cursor = 'pointer';
+      breakingTitleEl.onclick = () => {
+        const targetUrl = item.url || (item.slug ? `/p/${item.slug}` : '#');
+        if (targetUrl && targetUrl !== '#') window.location.href = targetUrl;
+      };
+    }
+
+    function nextBreaking() {
+      geBreakingState.index = (geBreakingState.index + 1) % geBreakingState.items.length;
+      renderBreaking();
+    }
+
+    function prevBreaking() {
+      geBreakingState.index = (geBreakingState.index - 1 + geBreakingState.items.length) % geBreakingState.items.length;
+      renderBreaking();
+    }
+
+    function restartBreakingTimer() {
+      if (geBreakingState.timer) clearInterval(geBreakingState.timer);
+      geBreakingState.timer = setInterval(nextBreaking, BREAKING_ROTATE_MS);
+    }
+
+    if (prevBtn) {
+      prevBtn.onclick = () => {
+        prevBreaking();
+        restartBreakingTimer();
+      };
+    }
+
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        nextBreaking();
+        restartBreakingTimer();
+      };
+    }
+
+    renderBreaking();
+    restartBreakingTimer();
+  }
 
   // Constants to control the number of highlighted stories and the pagination size
   const EMPHASISED_COUNT = 4;
@@ -404,13 +458,16 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.appendChild(meta);
     overlay.appendChild(title);
     card.appendChild(overlay);
-    // Tornar clicável: clicar rola até o artigo correspondente
+    // Tornar clicável: abre a página do post (fallback: scroll)
     card.style.cursor = 'pointer';
     card.addEventListener('click', () => {
-      const articleEl = document.getElementById(`article-${item.id}`);
-      if (articleEl) {
-        articleEl.scrollIntoView({ behavior: 'smooth' });
+      const targetUrl = item.url || (item.slug ? `/p/${item.slug}` : '#');
+      if (targetUrl && targetUrl !== '#') {
+        window.location.href = targetUrl;
+        return;
       }
+      const articleEl = document.getElementById(`article-${item.id}`);
+      if (articleEl) articleEl.scrollIntoView({ behavior: 'smooth' });
     });
     return card;
   }
@@ -524,15 +581,16 @@ document.addEventListener('DOMContentLoaded', () => {
       article.appendChild(contentDiv);
       article.appendChild(badgeDiv);
 
-      // Card clicável: abre a notícia detalhada (âncora na própria página)
+      // Card clicável: abre a página do post (fallback: scroll)
       article.style.cursor = 'pointer';
       article.addEventListener('click', () => {
-        const target = document.getElementById(`article-${item.id}`);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (item.link && item.link !== '#') {
-          window.open(item.link, '_blank', 'noopener,noreferrer');
+        const targetUrl = item.url || (item.slug ? `/p/${item.slug}` : '#');
+        if (targetUrl && targetUrl !== '#') {
+          window.location.href = targetUrl;
+          return;
         }
+        const target = document.getElementById(`article-${item.id}`);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
       feedList.appendChild(article);
@@ -769,54 +827,121 @@ document.addEventListener('DOMContentLoaded', () => {
   if (registerTabBtn) registerTabBtn.addEventListener('click', () => switchTab(false));
 
   // Login form submission
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      // Retrieve stored users from localStorage
-      const usersJSON = localStorage.getItem('users');
-      const users = usersJSON ? JSON.parse(usersJSON) : [];
-      const user = users.find(u => u.email === email && u.password === password);
-      if (!user) {
-        alert('Credenciais inválidas.');
-        return;
-      }
-      localStorage.setItem('currentUser', JSON.stringify({ email: user.email }));
+ 
+
+// ===== AUTH via API (STAGING) =====
+const API_BASE = ''; 
+// Se seu front e API estão no MESMO domínio/porta, deixe vazio ''.
+// Se estiver testando local e a API está em outro lugar, use:
+// const API_BASE = 'http://localhost:3001';
+
+function saveAuth(token, user) {
+  localStorage.setItem('authToken', token);
+  localStorage.setItem('currentUser', JSON.stringify(user));
+}
+
+function clearAuth() {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('currentUser');
+}
+
+async function apiRequest(path, options = {}) {
+  const token = localStorage.getItem('authToken');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {}),
+  };
+
+  // Se tiver token, manda junto
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+  });
+
+  const contentType = res.headers.get('content-type') || '';
+  const data = contentType.includes('application/json') ? await res.json() : null;
+
+  if (!res.ok) {
+    const msg = data?.error || `Erro HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return data;
+}
+
+if (loginForm) {
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      const data = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      // esperado: { success:true, token:"...", user:{...} }
+      saveAuth(data.token, data.user);
+
       hideModal();
       updateUserInterface();
-    });
-  }
-  // Registration form submission
-  if (registerForm) {
-    registerForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const email = document.getElementById('registerEmail').value.trim();
-      const password = document.getElementById('registerPassword').value;
-      const confirm = document.getElementById('registerConfirm').value;
-      const subscribe = document.getElementById('subscribeNews').checked;
-      if (password !== confirm) {
-        alert('As senhas não conferem.');
-        return;
+    } catch (err) {
+      alert(err.message || 'Erro ao fazer login.');
+    }
+  });
+}
+
+if (registerForm) {
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirm = document.getElementById('registerConfirm').value;
+    const subscribe = document.getElementById('subscribeNews').checked;
+
+    if (password !== confirm) {
+      alert('As senhas não conferem.');
+      return;
+    }
+
+    try {
+      const data = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, name: email, subscribe }),
+      });
+
+      // Alguns backends retornam só success/message no register.
+      // Se o seu register não devolver token, fazemos login automático:
+      try {
+        const loginData = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        });
+        saveAuth(loginData.token, loginData.user);
+      } catch (_) {
+        // se falhar o auto login, segue sem logar
       }
-      // Retrieve existing users array
-      const usersJSON = localStorage.getItem('users');
-      const users = usersJSON ? JSON.parse(usersJSON) : [];
-      if (users.some(u => u.email === email)) {
-        alert('Já existe uma conta com este email.');
-        return;
-      }
-      const newUser = { email, password, subscribe };
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      localStorage.setItem('currentUser', JSON.stringify({ email }));
+
       hideModal();
       updateUserInterface();
-    });
-  }
+      alert(data?.message || 'Cadastro concluído!');
+    } catch (err) {
+      alert(err.message || 'Erro ao registrar usuário.');
+    }
+  });
+}
+
+
   // Logout
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
+      // mantém seu comportamento atual
       localStorage.removeItem('currentUser');
       updateUserInterface();
       // Após logout, não exibimos automaticamente o modal; o site permanece acessível.
@@ -826,88 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateUserInterface();
   // Render feed for the first time for all users
   applyFilters();
-
-  /**
-   * -------- Breaking News ticker --------
-   * Mostra até 5 notícias marcadas como urgentes. Cicla automaticamente.
-   */
-  const breakingItems = feedItems
-    .filter(item => item.urgent)
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-    .slice(0, 5);
-  let breakingIndex = 0;
-  let currentBreakingId = null;
-  const breakingTitleEl = document.querySelector('.breaking-title');
-  const prevBtn = document.querySelector('.breaking-prev');
-  const nextBtn = document.querySelector('.breaking-next');
-  let breakingInterval;
-
-  /**
-   * Atualiza o título do breaking news com base no índice atual.
-   */
-  function updateBreaking() {
-    if (!breakingItems.length) return;
-    const item = breakingItems[breakingIndex];
-    currentBreakingId = item.id;
-    if (breakingTitleEl) breakingTitleEl.textContent = item.title;
-  }
-
-  /**
-   * Avança para a próxima notícia urgente e atualiza o ticker.
-   */
-  function showNextBreaking() {
-    if (!breakingItems.length) return;
-    breakingIndex = (breakingIndex + 1) % breakingItems.length;
-    updateBreaking();
-  }
-
-  /**
-   * Volta para a notícia urgente anterior.
-   */
-  function showPrevBreaking() {
-    if (!breakingItems.length) return;
-    breakingIndex = (breakingIndex - 1 + breakingItems.length) % breakingItems.length;
-    updateBreaking();
-  }
-
-  /**
-   * Inicia ou reinicia o intervalo de rotação automática.
-   */
-  function startBreakingInterval() {
-    clearInterval(breakingInterval);
-    breakingInterval = setInterval(showNextBreaking, 5000);
-  }
-
-  // Inicializa o ticker
-  updateBreaking();
-  startBreakingInterval();
-
-  // Clique no título leva ao artigo correspondente
-  if (breakingTitleEl) {
-    breakingTitleEl.style.cursor = 'pointer';
-    breakingTitleEl.addEventListener('click', (e) => {
-      if (currentBreakingId) {
-        const article = document.getElementById(`article-${currentBreakingId}`);
-        if (article) article.scrollIntoView({ behavior: 'smooth' });
-      }
-    });
-  }
-
-  // Navegação manual via botões
-  if (prevBtn) {
-    prevBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showPrevBreaking();
-      startBreakingInterval();
-    });
-  }
-  if (nextBtn) {
-    nextBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showNextBreaking();
-      startBreakingInterval();
-    });
-  }
+  loadFeedFromApi();
+  setInterval(loadFeedFromApi, 30000);
 
   /**
    * ----------------------- Mercados Estratégicos ------------------------
