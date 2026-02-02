@@ -4,79 +4,43 @@ const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
 
-// Compat: garante fetch mesmo em Node < 18
-const fetch = globalThis.fetch || require('node-fetch');
-const nodemailer = require('nodemailer');
-
-const app = express();
-app.use(express.json({ limit: '50kb' }));
-
-const PORT = process.env.PORT || 3000;
-const INGEST_TOKEN = process.env.INGEST_TOKEN || '';
-
 // PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// =========================
-// Helpers
-// =========================
-function slugify(str) {
-  return String(str || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 80);
-}
+// Compat: garante fetch mesmo em Node < 18
+const fetch = globalThis.fetch || require('node-fetch');
+const nodemailer = require('nodemailer');
 
-function safeText(v, max = 8000) {
-  const s = String(v ?? '').replace(/\s+/g, ' ').trim();
-  if (!s) return '';
-  return s.length > max ? s.slice(0, max).trim() : s;
-}
+const app = express();
 
-function safeIsoDate(v) {
-  const d = new Date(v);
-  return isNaN(d) ? new Date().toISOString() : d.toISOString();
-}
+app.use(express.json({ limit: '50kb' }));
+const PORT = process.env.PORT || 3000;
 
-function safeNumber(v) {
-  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
-  return Number.isFinite(n) ? n : null;
-}
-
-function withTimeout(promise, timeoutMs = 9000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs))
-  ]);
-}
-
-async function fetchText(url, timeoutMs = 9000) {
-  const res = await withTimeout(fetch(url, {
-    cache: 'no-store',
-    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
-  }), timeoutMs);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.text();
-}
-
-async function fetchJson(url, timeoutMs = 9000) {
-  const res = await withTimeout(fetch(url, {
-    cache: 'no-store',
-    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
-  }), timeoutMs);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
-}
 
 // =========================
-// DB helpers (Postgres)
+// News storage (v1 - JSON)
 // =========================
+// Nesta primeira versão, salvamos as matérias em um arquivo JSON no servidor.
+// É simples, rápido de colocar no ar e depois pode migrar para um banco (SQLite/Postgres).
+const fs = require('fs');
+
+const DATA_DIR = path.join(__dirname, 'data');
+const POSTS_FILE = path.join(DATA_DIR, 'posts.json');
+const INGEST_TOKEN = process.env.INGEST_TOKEN || '';
+
+function ensureDataFiles() {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(POSTS_FILE)) fs.writeFileSync(POSTS_FILE, JSON.stringify({ posts: [] }, null, 2), 'utf8');
+}
+
+
+
+// =========================
+// News storage (v2 - Postgres)
+// =========================
+
 async function readPosts(limit = 80) {
   const { rows } = await pool.query(
     `SELECT id,
@@ -161,9 +125,61 @@ async function insertPost(post) {
   return rows[0];
 }
 
-// =========================
-// Parceria (envio de e-mail)
-// =========================
+
+function slugify(str) {
+  return String(str || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 80);
+}
+
+function safeText(v, max = 8000) {
+  const s = String(v ?? '').replace(/\s+/g, ' ').trim();
+  if (!s) return '';
+  return s.length > max ? s.slice(0, max).trim() : s;
+}
+
+function safeIsoDate(v) {
+  const d = new Date(v);
+  return isNaN(d) ? new Date().toISOString() : d.toISOString();
+}
+
+// === Helpers ===
+function safeNumber(v) {
+  const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+
+function withTimeout(promise, timeoutMs = 9000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs))
+  ]);
+}
+
+async function fetchText(url, timeoutMs = 9000) {
+  const res = await withTimeout(fetch(url, {
+    cache: 'no-store',
+    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
+  }), timeoutMs);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
+async function fetchJson(url, timeoutMs = 9000) {
+  const res = await withTimeout(fetch(url, {
+    cache: 'no-store',
+    headers: { 'User-Agent': 'GeopoliticaEstrategica/1.0 (+markets endpoint)' }
+  }), timeoutMs);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+// === Parceria (envio de e-mail) ===
 app.post('/api/partnership-send', async (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
 
@@ -179,10 +195,12 @@ app.post('/api/partnership-send', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'MISSING_FIELDS' });
     }
 
+    // validação simples de e-mail (mantém o browser como primeira linha de validação)
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return res.status(400).json({ ok: false, error: 'INVALID_EMAIL' });
     }
 
+    // Config SMTP via variáveis de ambiente (não expõe credenciais no frontend)
     const SMTP_HOST = process.env.SMTP_HOST;
     const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
     const SMTP_USER = process.env.SMTP_USER;
@@ -225,13 +243,14 @@ ${cleanMensagem}
   }
 });
 
-// =========================
-// Markets
-// =========================
+// === Sources ===
+
+// USD/BRL (BCB PTAX - venda). Tenta hoje; se não houver (fim de semana/feriado), tenta dias anteriores.
 function fmtBCBDate(d) {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   const yyyy = d.getFullYear();
+  // Olinda costuma aceitar MM-DD-YYYY
   return `${mm}-${dd}-${yyyy}`;
 }
 
@@ -246,11 +265,14 @@ async function fetchUSDBRL_BCB_PTAX() {
       const row = data?.value?.[0];
       const v = safeNumber(row?.cotacaoVenda);
       if (v != null) return v;
-    } catch (_) {}
+    } catch (_) {
+      // continue
+    }
   }
   return null;
 }
 
+// EUR/USD (ECB eurofxref-daily.xml). ECB fornece USD por 1 EUR -> isso é EUR/USD.
 async function fetchEURUSD_ECB() {
   try {
     const xml = await fetchText('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml');
@@ -262,6 +284,7 @@ async function fetchEURUSD_ECB() {
   }
 }
 
+// Stooq close price (CSV)
 async function fetchStooqClose(symbol) {
   const url = `https://stooq.com/q/l/?s=${encodeURIComponent(symbol)}&f=sd2t2ohlcv&h&e=csv`;
   try {
@@ -270,6 +293,7 @@ async function fetchStooqClose(symbol) {
     const lines = csv.trim().split(/\r?\n/);
     if (lines.length < 2) return null;
     const cols = lines[1].split(',');
+    // Symbol,Date,Time,Open,High,Low,Close,Volume
     const close = safeNumber(cols[6]);
     return close;
   } catch (_) {
@@ -277,6 +301,7 @@ async function fetchStooqClose(symbol) {
   }
 }
 
+// Bitcoin (CoinGecko)
 async function fetchBTCUSD_CoinGecko() {
   try {
     const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd';
@@ -287,14 +312,17 @@ async function fetchBTCUSD_CoinGecko() {
   }
 }
 
+// FRED (St. Louis Fed) CSV: pega o último valor numérico disponível de uma série
 async function fetchFREDLatest(seriesId) {
   try {
     const url = `https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(seriesId)}`;
     const csv = await fetchText(url);
     const lines = csv.trim().split(/\r?\n/);
+    // formato: DATE,VALUE
     for (let i = lines.length - 1; i >= 1; i--) {
       const parts = lines[i].split(',');
-      const n = safeNumber(parts?.[1]);
+      const v = parts?.[1];
+      const n = safeNumber(v);
       if (n != null) return n;
     }
     return null;
@@ -303,11 +331,13 @@ async function fetchFREDLatest(seriesId) {
   }
 }
 
+// CBOE VIX history CSV: usa o último Close disponível
 async function fetchVIX_CBOE() {
   try {
     const url = 'https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv';
     const csv = await fetchText(url);
     const lines = csv.trim().split(/\r?\n/);
+    // Header: DATE, OPEN, HIGH, LOW, CLOSE
     for (let i = lines.length - 1; i >= 1; i--) {
       const cols = lines[i].split(',');
       const close = safeNumber(cols?.[4]);
@@ -319,18 +349,31 @@ async function fetchVIX_CBOE() {
   }
 }
 
+// === API endpoint ===
 app.get('/api/markets', async (req, res) => {
+  // Cache control: evitar servir dados antigos
   res.set('Cache-Control', 'no-store, max-age=0');
 
+  // Observação: onde houver fonte oficial melhor, priorizamos.
   const tasks = {
+    // Brent: FRED DCOILBRENTEU (US$/barrel) - fonte estável e sem chave
     brent: async () => (await fetchFREDLatest('DCOILBRENTEU')) ?? null,
+
+    // Gold: Stooq (spot/futuros). Mantém fallback.
     gold: async () => (await fetchStooqClose('xauusd')) ?? (await fetchStooqClose('gc.f')) ?? null,
+
     usdbrl: fetchUSDBRL_BCB_PTAX,
     eurusd: fetchEURUSD_ECB,
+
+    // Natural Gas: futuros (Stooq)
     natgas: async () => (await fetchStooqClose('ng.f')) ?? null,
+
+    // Índices (Stooq)
     sp500: async () => (await fetchStooqClose('^spx')) ?? (await fetchStooqClose('spx')) ?? null,
     nasdaq: async () => (await fetchStooqClose('^ndx')) ?? (await fetchStooqClose('ndx')) ?? null,
+
     bitcoin: fetchBTCUSD_CoinGecko,
+    // VIX: fonte direta CBOE (histórico diário)
     vix: fetchVIX_CBOE
   };
 
@@ -352,108 +395,58 @@ app.get('/api/markets', async (req, res) => {
 });
 
 // =========================
-// News API (Postgres)
+// News API (v1)
 // =========================
 
 // Ingest de matéria (chamado pelo n8n)
-app.post('/api/ingest', async (req, res) => {
+app.post('/api/ingest', (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
 
-  // segurança simples por token
-  const token = String(req.header('x-ingest-token') || req.body?.token || '').trim();
-  if (!INGEST_TOKEN || token !== INGEST_TOKEN) {
-    return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
-  }
 
-  try {
-    const payload = req.body || {};
 
-    const title = safeText(payload.title, 220);
-    const excerpt = safeText(payload.excerpt || payload.summary, 420);
-    const content = safeText(payload.content, 25000);
-    const imageUrl = safeText(payload.imageUrl, 800);
-    const sourceUrl = safeText(payload.sourceUrl, 1200);
-    const sourceName = safeText(payload.sourceName, 80);
-    const category = safeText(payload.category, 30) || 'GEO';
-    const subcategory = safeText(payload.subcategory, 60) || null;
-    const author = safeText(payload.author, 60) || 'Geopolítica Estratégica';
-    const publishedAt = safeIsoDate(payload.publishedAt || new Date().toISOString());
-    const urgent = Boolean(payload.urgent);
 
-    if (!title || !excerpt) {
-      return res.status(400).json({ ok: false, error: 'MISSING_FIELDS' });
-    }
 
-    // Dedupe por sourceUrl
-    if (sourceUrl) {
-      const existing = await findPostBySourceUrl(sourceUrl);
-      if (existing) {
-        return res.json({ ok: true, deduped: true, url: existing.url || (`/p/${existing.slug}`) });
-      }
-    }
 
-    // slug único
-    const baseSlug = slugify(payload.slug || title);
-    let slug = baseSlug || ('post-' + Date.now());
-    let bump = 2;
 
-    while (true) {
-      const check = await pool.query(`SELECT 1 FROM posts WHERE slug = $1 LIMIT 1`, [slug]);
-      if (check.rowCount === 0) break;
-      slug = `${baseSlug}-${bump}`;
-      bump++;
-    }
 
-    const url = `/p/${slug}`;
 
-    const post = {
-      slug,
-      url,
-      title,
-      excerpt,
-      content,
-      imageUrl,
-      sourceUrl: sourceUrl || null,
-      sourceName: sourceName || null,
-      category,
-      subcategory,
-      author,
-      publishedAt,
-      urgent
-    };
-
-    const inserted = await insertPost(post);
-    return res.json({ ok: true, url: inserted.url });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: 'DB_ERROR' });
-  }
-});
 
 // Lista para o feed
-app.get('/api/posts', async (req, res) => {
+app.get('/api/posts', (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
 
-  try {
-    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '80'), 10) || 80));
-    const posts = await readPosts(limit);
-    res.json({ ok: true, posts });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: 'DB_ERROR' });
-  }
+  const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '80'), 10) || 80));
+  const posts = readPosts();
+
+  // feed precisa de campos compatíveis com o front (title, excerpt, imageUrl, publishedAt...)
+  const out = posts
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .slice(0, limit)
+    .map(p => ({
+      id: p.id,
+      slug: p.slug,
+      url: p.url,
+      category: p.category,
+      subcategory: p.subcategory,
+      title: p.title,
+      excerpt: p.excerpt,
+      author: p.author,
+      publishedAt: p.publishedAt,
+      imageUrl: p.imageUrl,
+      urgent: Boolean(p.urgent)
+    }));
+
+  res.json({ ok: true, posts: out });
 });
 
 // Matéria individual (página)
-app.get('/api/post/:slug', async (req, res) => {
+app.get('/api/post/:slug', (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
-
-  try {
-    const slug = String(req.params.slug || '').trim();
-    const post = await readPostBySlug(slug);
-    if (!post) return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
-    res.json({ ok: true, post });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: 'DB_ERROR' });
-  }
+  const slug = String(req.params.slug || '').trim();
+  const posts = readPosts();
+  const post = posts.find(p => p.slug === slug);
+  if (!post) return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
+  res.json({ ok: true, post });
 });
 
 // Serve arquivos estáticos

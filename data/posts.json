@@ -1,0 +1,52 @@
+{
+  "posts": [
+    {
+      "id": 1769657972193,
+      "slug": "urgente-teste-breaking-20260129033932",
+      "url": "/p/urgente-teste-breaking-20260129033932",
+      "title": "URGENTE - Teste Breaking 20260129033932",
+      "excerpt": "Breaking ok.",
+      "content": "Conteúdo do urgente.",
+      "imageUrl": "",
+      "sourceUrl": "https://example.com/urgent-20260129033932",
+      "sourceName": "Sistema",
+      "category": "GEO",
+      "subcategory": null,
+      "author": "Geopolítica Estratégica",
+      "publishedAt": "2026-01-29T02:20:00Z",
+      "urgent": true
+    },
+    {
+      "id": 1769655255073,
+      "slug": "urgente-teste-breaking-20260129025415",
+      "url": "/p/urgente-teste-breaking-20260129025415",
+      "title": "URGENTE - Teste Breaking 20260129025415",
+      "excerpt": "Se isso aparecer no ticker, o Breaking por API está ok.",
+      "content": "Conteúdo do urgente. Clique no breaking para abrir o post.",
+      "imageUrl": "",
+      "sourceUrl": "https://example.com/urgent-20260129025415",
+      "sourceName": "Sistema",
+      "category": "GEO",
+      "subcategory": null,
+      "author": "Geopolítica Estratégica",
+      "publishedAt": "2026-01-29T02:20:00Z",
+      "urgent": true
+    },
+    {
+      "id": 1769652504249,
+      "slug": "teste-2-pipeline-site",
+      "url": "/p/teste-2-pipeline-site",
+      "title": "Teste 2 - Pipeline Site",
+      "excerpt": "Resumo teste 2. Se isso aparecer no feed, a API e o armazenamento estão ok.",
+      "content": "Conteúdo completo do teste 2. Se abrir em /p/slug, fechou.",
+      "imageUrl": "",
+      "sourceUrl": "https://example.com",
+      "sourceName": "Sistema",
+      "category": "GEO",
+      "subcategory": null,
+      "author": "Geopolítica Estratégica",
+      "publishedAt": "2026-01-29T02:10:00Z",
+      "urgent": false
+    }
+  ]
+}
