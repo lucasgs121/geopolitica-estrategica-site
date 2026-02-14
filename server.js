@@ -456,13 +456,31 @@ app.get('/api/post/:slug', async (req, res) => {
   }
 });
 
+// Página de notícia (renderizada no front)
+app.get('/p/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, 'post.html'));
+});
+
+
+// Bloqueia qualquer acesso a rotas/arquivos de debug (mesmo que existam no disco)
+app.use((req, res, next) => {
+  const p = req.path || '';
+  if (p === '/debug.html' || p === '/debug' || p.startsWith('/_private_debug')) {
+    return res.status(404).send('Not found');
+  }
+  return next();
+});
+
+
 // Serve arquivos estáticos
 app.use(express.static(path.join(__dirname)));
 
-// Fallback para a home
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  return res.status(404).send('Not found');
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Geopolítica Estratégica rodando em http://localhost:${PORT}`);

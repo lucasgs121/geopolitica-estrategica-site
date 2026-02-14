@@ -13,7 +13,7 @@
 
 
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Geopolítica Estratégica</title>
+<title>Notícia | Geopolítica Estratégica</title>
 <!-- Basic reset and imports -->
 <!-- Append a version query to force browsers to reload updated styles -->
 <!-- Bump the version query whenever CSS/JS changes to force the browser to reload the latest file -->
@@ -46,7 +46,7 @@
 <header class="header">
 <div class="container header-inner">
 <!-- Wrap the entire logo area in a link so clicking it returns to the homepage -->
-<a class="logo-link" href="#">
+<a class="logo-link" href="/">
 <div class="logo-block">
 <!-- Use the supplied logo instead of the yellow circle -->
 <img alt="Geopolítica Estratégica" class="logo-image" src="logo.png"/>
@@ -311,16 +311,28 @@
 <!-- Main content area with feed and sidebar -->
 <main class="main-content">
 <div class="container">
-<!-- Destaques principais ocuparão toda a largura desta wrapper -->
-<div class="top-highlights-wrapper" id="topHighlightsWrapper"></div>
-<!-- Feed e barra lateral em uma linha a partir da segunda seção -->
 <div class="feed-layout">
 <div class="feed-column">
-<!-- Título do feed alterado conforme solicitação do usuário -->
-<h1 class="feed-title">Últimas Notícias</h1>
-<div class="feed-update">ATUALIZAÇÃO EM TEMPO REAL</div>
-<!-- Feed items serão renderizados aqui via script.js -->
-<div class="feed-list" id="feedList"></div>
+<article class="post-article" id="postArticle">
+<a class="post-back" href="/">← Voltar para início</a>
+<div class="post-badges">
+<span class="post-badge" id="postCategory"></span>
+<span class="post-badge post-badge-muted hidden" id="postSubcategory"></span>
+<span class="post-badge post-badge-urgent hidden" id="postUrgentBadge">URGENTE</span>
+</div>
+<h1 class="post-title" id="postTitle">Carregando...</h1>
+<p class="post-excerpt hidden" id="postExcerpt"></p>
+<div class="post-meta">
+<span id="postDate"></span>
+<span id="postAuthor"></span>
+</div>
+<div class="post-hero hidden" id="postHero">
+<img alt="" class="post-image" id="postImage"/>
+</div>
+<div class="post-content" id="postContent"></div>
+<div class="post-source hidden" id="postSource"></div>
+<div class="post-error hidden" id="postError"></div>
+</article>
 </div>
 <aside class="sidebar-column">
 <!-- Updated Markets widget: larger list with real‑time updates. The trending widget was removed to
@@ -340,7 +352,7 @@
 <footer aria-label="Rodapé Geopolítica Estratégica" class="site-footer">
 <div class="container footer-inner">
 <div class="footer-brand">
-<a aria-label="Voltar para Início" class="footer-logo-link" href="#">
+<a aria-label="Voltar para Início" class="footer-logo-link" href="/">
 <div class="logo-block footer-logo-block">
 <img alt="Geopolítica Estratégica" class="footer-logo-image" src="logo.png"/>
 <div class="logo-text-block footer-logo-text-block">
@@ -464,6 +476,7 @@
 <!-- Append a version query to force browsers to reload updated scripts -->
 <!-- Update version to force cache refresh -->
 <script src="script.js?v=15"></script>
+<script src="post.js?v=1"></script>
 <!-- Institutional modals -->
 <div aria-hidden="true" class="modal hidden" id="aboutModal">
 <div aria-labelledby="aboutModalTitle" aria-modal="true" class="modal-content info-modal-content" role="dialog">
