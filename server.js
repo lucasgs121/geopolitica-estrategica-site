@@ -39,6 +39,67 @@ function safeText(v, max = 8000) {
   return s.length > max ? s.slice(0, max).trim() : s;
 }
 
+function safeContent(v, max = 25000) {
+  let s = String(v ?? '');
+  if (!s) return '';
+  s = s.replace(/\r\n?/g, '\n');
+  s = s.replace(/[ \t]+/g, ' ');
+  s = s.replace(/\n{3,}/g, '\n\n');
+  s = s.trim();
+  if (!s) return '';
+  return s.length > max ? s.slice(0, max).trim() : s;
+}
+
+function normalizeInline(s) {
+  return String(s ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeRegex(s) {
+  return String(s ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripTrailingByline(content, author) {
+  const raw = String(content ?? '');
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+
+  const authorRaw = String(author ?? '').trim();
+  if (!authorRaw) return trimmed;
+
+  const authorNoAccents = authorRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const authorVariants = [authorRaw, authorNoAccents]
+    .map((v) => String(v || '').trim())
+    .filter(Boolean)
+    .map((v) => v.split(/\s+/).map(escapeRegex).join('\\s+'));
+  if (!authorVariants.length) return trimmed;
+
+  const bylineRe = new RegExp(
+    `(?:\\s|\\u00A0)*` +
+    `(?:<\\s*p[^>]*>\\s*)?` +
+    `(?:&lt;\\s*p[^&]*?&gt;\\s*)?` +
+    `(?:[-–—•]*\\s*)?` +
+    `(?:por|fonte)\\s*:?\\s*` +
+    `(?:[-–—]*\\s*)?` +
+    `(?:${authorVariants.join('|')})` +
+    `\\s*(?:[\\.|-–—•]*)?` +
+    `(?:\\s*<\\s*\\/\\s*p\\s*>\\s*)?` +
+    `(?:\\s*<\\s*br\\s*\\/?>\\s*)*` +
+    `(?:\\s*&lt;\\s*\\/\\s*p\\s*&gt;\\s*)?` +
+    `(?:\\s*&lt;\\s*br\\s*\\/??&gt;\\s*)*` +
+    `\\s*$`,
+    'i'
+  );
+  if (bylineRe.test(trimmed)) {
+    return trimmed.replace(bylineRe, '').trim();
+  }
+
+  return trimmed;
+}
+
 function safeIsoDate(v) {
   const d = new Date(v);
   return isNaN(d) ? new Date().toISOString() : d.toISOString();
@@ -370,13 +431,13 @@ app.post('/api/ingest', async (req, res) => {
 
     const title = safeText(payload.title, 220);
     const excerpt = safeText(payload.excerpt || payload.summary, 420);
-    const content = safeText(payload.content, 25000);
     const imageUrl = safeText(payload.imageUrl, 800);
     const sourceUrl = safeText(payload.sourceUrl, 1200);
     const sourceName = safeText(payload.sourceName, 80);
     const category = safeText(payload.category, 30) || 'GEO';
     const subcategory = safeText(payload.subcategory, 60) || null;
     const author = safeText(payload.author, 60) || 'Geopolítica Estratégica';
+    const content = stripTrailingByline(safeContent(payload.content, 25000), author);
     const publishedAt = safeIsoDate(payload.publishedAt || new Date().toISOString());
     const urgent = Boolean(payload.urgent);
 
