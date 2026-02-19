@@ -152,7 +152,7 @@ async function readPosts(limit = 80) {
             image_url AS "imageUrl",
             urgent
      FROM posts
-     ORDER BY published_at DESC
+     ORDER BY created_at DESC, id DESC
      LIMIT $1`,
     [limit]
   );
