@@ -105,6 +105,58 @@ function safeIsoDate(v) {
   return isNaN(d) ? new Date().toISOString() : d.toISOString();
 }
 
+function normalizeSourceUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '';
+
+  let candidate = s;
+  if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(candidate)) {
+    candidate = `https://${candidate}`;
+  }
+
+  try {
+    const u = new URL(candidate);
+    u.hash = '';
+
+    if (u.hostname.startsWith('www.')) {
+      u.hostname = u.hostname.slice(4);
+    }
+
+    if (u.pathname) {
+      u.pathname = u.pathname.replace(/\/+$/, '');
+    }
+
+    const dropParams = new Set([
+      'utm_source',
+      'utm_medium',
+      'utm_campaign',
+      'utm_term',
+      'utm_content',
+      'gclid',
+      'fbclid',
+      'igshid',
+      'mc_cid',
+      'mc_eid',
+      'ref',
+      'ref_src'
+    ]);
+
+    for (const key of Array.from(u.searchParams.keys())) {
+      if (dropParams.has(key.toLowerCase())) {
+        u.searchParams.delete(key);
+      }
+    }
+
+    let out = u.toString();
+    out = out.replace(/\/(\?|$)/, '$1');
+    return out;
+  } catch (_) {
+    let out = s.split('#')[0].trim();
+    out = out.replace(/\/+$/, '');
+    return out;
+  }
+}
+
 function safeNumber(v) {
   const n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.'));
   return Number.isFinite(n) ? n : null;
@@ -150,6 +202,8 @@ async function readPosts(limit = 80) {
             author,
             published_at AS "publishedAt",
             image_url AS "imageUrl",
+            source_url AS "sourceUrl",
+            source_url AS "source_url",
             urgent
      FROM posts
      ORDER BY created_at DESC, id DESC
@@ -186,7 +240,11 @@ async function readPostBySlug(slug) {
 async function findPostBySourceUrl(sourceUrl) {
   if (!sourceUrl) return null;
   const { rows } = await pool.query(
-    `SELECT slug, url
+    `SELECT id,
+            slug,
+            url,
+            source_url AS "sourceUrl",
+            source_url AS "source_url"
      FROM posts
      WHERE source_url = $1
      LIMIT 1`,
@@ -426,13 +484,16 @@ app.post('/api/ingest', async (req, res) => {
     return res.status(401).json({ ok: false, error: 'UNAUTHORIZED' });
   }
 
+  let sourceUrl = null;
   try {
     const payload = req.body || {};
 
     const title = safeText(payload.title, 220);
     const excerpt = safeText(payload.excerpt || payload.summary, 420);
     const imageUrl = safeText(payload.imageUrl, 800);
-    const sourceUrl = safeText(payload.sourceUrl, 1200);
+    const rawSourceUrl = payload.sourceUrl ?? payload.source_url;
+    const normalizedSourceUrl = normalizeSourceUrl(rawSourceUrl);
+    sourceUrl = safeText(normalizedSourceUrl, 1200) || null;
     const sourceName = safeText(payload.sourceName, 80);
     const category = safeText(payload.category, 30) || 'GEO';
     const subcategory = safeText(payload.subcategory, 60) || null;
@@ -445,11 +506,19 @@ app.post('/api/ingest', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'MISSING_FIELDS' });
     }
 
-    // Dedupe por sourceUrl
+    // Dedupe por source_url
     if (sourceUrl) {
       const existing = await findPostBySourceUrl(sourceUrl);
       if (existing) {
-        return res.json({ ok: true, deduped: true, url: existing.url || (`/p/${existing.slug}`) });
+        return res.json({
+          ok: true,
+          duplicate: true,
+          reason: 'DUPLICATE_SOURCE_URL',
+          id: existing.id,
+          slug: existing.slug,
+          url: existing.url || (`/p/${existing.slug}`),
+          source_url: sourceUrl
+        });
       }
     }
 
@@ -474,7 +543,7 @@ app.post('/api/ingest', async (req, res) => {
       excerpt,
       content,
       imageUrl,
-      sourceUrl: sourceUrl || null,
+      sourceUrl: sourceUrl,
       sourceName: sourceName || null,
       category,
       subcategory,
@@ -484,8 +553,29 @@ app.post('/api/ingest', async (req, res) => {
     };
 
     const inserted = await insertPost(post);
-    return res.json({ ok: true, url: inserted.url });
+    return res.json({
+      ok: true,
+      duplicate: false,
+      id: inserted.id,
+      slug: inserted.slug,
+      url: inserted.url,
+      source_url: sourceUrl
+    });
   } catch (e) {
+    if (e && e.code === '23505' && sourceUrl) {
+      const existing = await findPostBySourceUrl(sourceUrl);
+      if (existing) {
+        return res.json({
+          ok: true,
+          duplicate: true,
+          reason: 'DUPLICATE_SOURCE_URL',
+          id: existing.id,
+          slug: existing.slug,
+          url: existing.url || (`/p/${existing.slug}`),
+          source_url: sourceUrl
+        });
+      }
+    }
     return res.status(500).json({ ok: false, error: 'DB_ERROR' });
   }
 });
@@ -495,9 +585,13 @@ app.get('/api/posts', async (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
 
   try {
-    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '80'), 10) || 80));
+    const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit || '80'), 10) || 80));
     const posts = await readPosts(limit);
-    res.json({ ok: true, posts });
+    const withSourceUrl = posts.map((p) => ({
+      ...p,
+      source_url: p.source_url ?? p.sourceUrl ?? null
+    }));
+    res.json({ ok: true, posts: withSourceUrl });
   } catch (e) {
     res.status(500).json({ ok: false, error: 'DB_ERROR' });
   }
